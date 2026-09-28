@@ -7,15 +7,32 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 💡 감성적인 배경 톤 및 텍스트 입력창 테두리를 없애는 커스텀 CSS 적용
+# 2. 💡 모든 입력 컴포넌트(날짜, 멀티셀렉트, 파일업로더, 텍스트박스)의 테두리 제거 및 배경 커스텀 CSS
 st.markdown("""
     <style>
-    /* 전체 앱 배경을 부드러운 미색/아이보리 톤으로 변경 */
+    /* 전체 앱 배경을 부드러운 아이보리 톤으로 변경 */
     .stApp {
         background-color: #FDFBF7;
     }
     
-    /* 텍스트 입력창(text_area) 테두리 제거 및 배경 투명화/라운드 처리 */
+    /* 모든 위젯(셀렉박스, 날짜, 파일업로더 등)의 박스 테두리 제거 및 라운드 처리 */
+    div[data-baseweb="select"] > div, 
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="base-input"] {
+        border: none !important;
+        background-color: #F4F1EA !important;
+        border-radius: 12px !important;
+    }
+
+    /* 파일 업로더 박스 테두리 제거 및 깔끔하게 정리 */
+    [data-testid="stFileUploader"] {
+        border: none !important;
+        background-color: #F4F1EA !important;
+        border-radius: 12px !important;
+        padding: 10px;
+    }
+    
+    /* 텍스트 입력창(text_area) 테두리 제거 */
     textarea[aria-label="오늘 어떤 하루를 보냈나요?"] {
         border: none !important;
         background-color: #F4F1EA !important;
@@ -24,9 +41,9 @@ st.markdown("""
     }
     
     /* 포커스될 때 생기는 기본 파란색 테두리 제거 */
-    textarea[aria-label="오늘 어떤 하루를 보냈나요?"]:focus {
+    textarea:focus, input:focus {
         box-shadow: none !important;
-        border: 1px solid #E2DDD5 !important;
+        border: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -70,7 +87,7 @@ if st.session_state["current_page"] == "write":
         ]
     )
 
-    # 일기 내용 작성 텍스트 박스 (테두리가 깔끔하게 제거된 영역)
+    # 일기 내용 작성 텍스트 박스
     diary_text = st.text_area(
         "오늘 어떤 하루를 보냈나요?",
         placeholder="여기에 일기나 생각을 자유롭게 적어보세요...",
