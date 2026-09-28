@@ -8,9 +8,17 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 스타일 및 입력 칸 디자인 커스텀 CSS
+# 2. 💡 구글 웹폰트(Gowun Dodum)를 적용하여 전체 글씨체를 동글동글하게 변경
 st.markdown("""
     <style>
+    /* 구글 웹폰트 (고운 돋움) 불러오기 */
+    @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+
+    /* 전체 앱 및 모든 컴포넌트의 기본 폰트를 동글동글한 폰트로 지정 */
+    .stApp, * {
+        font-family: 'Gowun Dodum', sans-serif !important;
+    }
+
     /* 전체 앱 배경을 부드러운 아이보리 톤으로 설정 */
     .stApp {
         background-color: #FDFBF7 !important;
@@ -69,7 +77,7 @@ if st.session_state["current_page"] == "write":
             st.session_state["current_page"] = "archive"
             st.rerun()
 
-    # 💡 오늘 날짜를 가져와서 감성적인 큰 타이틀로 표시
+    # 오늘 날짜를 감성적인 큰 타이틀로 표시
     today_str = datetime.now().strftime("%Y년 %m월 %d일")
     st.markdown(f"### ✨ {today_str}")
     st.write("")
