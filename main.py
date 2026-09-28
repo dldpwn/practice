@@ -7,7 +7,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 💡 모든 입력 컴포넌트(날짜, 멀티셀렉트, 파일업로더, 텍스트박스)의 테두리 제거 및 배경 커스텀 CSS
+# 2. 💡 모든 컴포넌트의 테두리를 완벽하게 없애는 강화된 CSS
 st.markdown("""
     <style>
     /* 전체 앱 배경을 부드러운 아이보리 톤으로 변경 */
@@ -15,21 +15,34 @@ st.markdown("""
         background-color: #FDFBF7;
     }
     
-    /* 모든 위젯(셀렉박스, 날짜, 파일업로더 등)의 박스 테두리 제거 및 라운드 처리 */
-    div[data-baseweb="select"] > div, 
-    div[data-baseweb="input"] > div,
-    div[data-baseweb="base-input"] {
+    /* 멀티셀렉트(기분 선택) 박스 테두리 제거 및 배경 색상 통일 */
+    div[data-baseweb="select"] {
+        background-color: #F4F1EA !important;
+        border-radius: 12px !important;
+        border: none !important;
+    }
+    div[data-baseweb="select"] > div {
+        border: none !important;
+        background-color: transparent !important;
+    }
+
+    /* 날짜 선택 입력창 박스 테두리 제거 */
+    div[data-baseweb="input"] > div {
         border: none !important;
         background-color: #F4F1EA !important;
         border-radius: 12px !important;
     }
 
-    /* 파일 업로더 박스 테두리 제거 및 깔끔하게 정리 */
+    /* 사진 첨부 파일 업로더 전체 박스 테두리 제거 */
     [data-testid="stFileUploader"] {
-        border: none !important;
         background-color: #F4F1EA !important;
         border-radius: 12px !important;
-        padding: 10px;
+        border: none !important;
+        padding: 5px !important;
+    }
+    [data-testid="stFileUploader"] section {
+        border: none !important;
+        background-color: transparent !important;
     }
     
     /* 텍스트 입력창(text_area) 테두리 제거 */
@@ -40,7 +53,7 @@ st.markdown("""
         padding: 15px !important;
     }
     
-    /* 포커스될 때 생기는 기본 파란색 테두리 제거 */
+    /* 포커스될 때 생기는 기본 테두리 제거 */
     textarea:focus, input:focus {
         box-shadow: none !important;
         border: none !important;
