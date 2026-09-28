@@ -1,6 +1,6 @@
 import streamlit as st
 
-# 1. 페이지 설정 (사이드바 기본 숨김)
+# 1. 페이지 설정
 st.set_page_config(
     page_title="맞춤형 식단 플래너",
     page_icon="🥗",
@@ -22,15 +22,18 @@ with st.sidebar:
 
 # --- 메인 화면 ---
 st.title("🥗 내 칼로리에 맞춘 스마트 식단 플래너")
-st.write("메인 페이지에서 계산된 본인의 일일 에너지 소비량(TDEE)을 입력하고, 목표에 맞는 맞춤형 식단을 구성해보세요!")
+st.write("메인 페이지에서 계산된 본인의 일일 에너지 소비량(TDEE)을 활용해 맞춤형 식단을 구성해보세요!")
 st.divider()
 
-# 1. 사용자 목표 및 칼로리 설정
-st.subheader("1. 목표 설정 및 칼로리 입력")
+# 메인 페이지에서 계산한 값이 있다면 가져오고, 없으면 기본값 2000 사용
+default_tdee = st.session_state.get("calculated_tdee", 2000.0)
+
+# 1. 목표 설정 및 칼로리 입력
+st.subheader("1. 목표 설정 및 칼로리 확인")
 c1, c2 = st.columns(2)
 
 with c1:
-    target_tdee = st.number_input("내 일일 소비 칼로리 (TDEE, kcal)", min_value=1000.0, max_value=4000.0, value=2000.0, step=50.0)
+    target_tdee = st.number_input("내 일일 소비 칼로리 (TDEE, kcal)", min_value=1000.0, max_value=4000.0, value=default_tdee, step=50.0)
 
 with c2:
     goal = st.selectbox(
@@ -38,7 +41,6 @@ with c2:
         ["체중 유지 (TDEE 유지)", "체중 감량 (-500 kcal)", "근육 증가 (+300 kcal)"]
     )
 
-# 목표에 따른 최종 칼로리 계산
 if "감량" in goal:
     final_calories = target_tdee - 500
 elif "증량" in goal:
@@ -51,7 +53,6 @@ st.info(f"🎯 **설정된 최종 목표 칼로리: 약 {final_calories:.0f} kca
 
 # 2. 식단 구성 버튼
 if st.button("🍽️ 맞춤형 식단 구성하기", use_container_width=True):
-    # 영양소 칼로리 배분 (탄수화물 50%, 단백질 30%, 지방 20% 기준)
     carb_kcal = final_calories * 0.5
     protein_kcal = final_calories * 0.3
     fat_kcal = final_calories * 0.2
@@ -71,7 +72,6 @@ if st.button("🍽️ 맞춤형 식단 구성하기", use_container_width=True):
     st.write("")
     st.markdown("#### 🍳 추천 하루 식단표 (예시)")
     
-    # 아침, 점심, 저녁 칼로리 배분 (3:4:3)
     breakfast_cal = final_calories * 0.3
     lunch_cal = final_calories * 0.4
     dinner_cal = final_calories * 0.3
