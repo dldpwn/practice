@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 업로드 파일 정보 박스 숨기는 CSS
+# 2. 감성적인 웹폰트 및 기분 선택 빨간색 배경 제거 CSS
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -24,11 +24,18 @@ st.markdown("""
         background-color: #FDFBF7 !important;
     }
 
-    /* 1. 다중 선택(기분 선택) 박스 테두리 및 배경 */
+    /* 1. 다중 선택(기분 선택) 박스 테두리 및 배경 설정 */
     [data-testid="stMultiSelect"] div[data-baseweb="select"] {
         border: 1px solid #EAE5DC !important;
         background-color: #FDFBF7 !important;
         border-radius: 12px !important;
+    }
+
+    /* 💡 기분 선택 시 아이템(태그)에 들어가는 기본 빨간색/포인트 배경 없애고 차분하게 변경 */
+    [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+        background-color: #F0EAE1 !important;
+        color: #5C5346 !important;
+        border-radius: 8px !important;
     }
 
     /* 2. 텍스트 입력 영역 테두리 및 배경 */
@@ -145,7 +152,7 @@ if st.session_state["current_page"] == "write":
     with col_save_right:
         save_clicked = st.button("💾 저장하기", use_container_width=True)
 
-    # 💡 경고 및 성공 메시지가 버튼 칸에 갇히지 않고 가로로 길게 출력되도록 밖으로 배치
+    # 경고 및 성공 메시지 출력
     if save_clicked:
         if diary_text.strip() == "":
             st.warning("⚠️ 일기 내용을 한 줄 이상 적어주세요!")
@@ -190,4 +197,3 @@ elif st.session_state["current_page"] == "archive":
                     st.image(entry["image"], use_container_width=True)
                 
                 st.markdown(f"**✍️ 내용:** {entry['text']}")
-
