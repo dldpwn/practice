@@ -1,116 +1,90 @@
 import streamlit as st
-from datetime import datetime
 
-# 1. 페이지 설정 (사이드바 기본 숨김 처리)
+# 1. 페이지 기본 설정
 st.set_page_config(
-    page_title="Mood & Music Diary",
-    page_icon="🎵",
-    layout="centered",
-    initial_sidebar_state="collapsed" # 평소엔 사이드바 숨김
+    page_title="영양소 & 화학 반응 계산기",
+    page_icon="🧪",
+    layout="centered"
 )
 
-# 2. 아이보리 감성 디자인 CSS 적용
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+st.title("🧪 내 몸에 맞는 영양소 & 화학 반응 계산기")
+st.write("나의 신체 정보를 입력하고, 하루 대사량과 권장 영양소, 그리고 몸속 화학 반응을 확인해보세요!")
+st.divider()
 
-    .stApp, * {
-        font-family: 'Gowun Dodum', sans-serif !important;
-    }
+# 2. 사용자 신체 정보 입력 섹션
+st.subheader("1. 신체 정보 입력")
+col1, col2 = st.columns(2)
 
-    .stApp {
-        background-color: #FDFBF7 !important;
-    }
+with col1:
+    gender = st.selectbox("성별", ["남성", "여성"])
+    age = st.number_input("나이 (세)", min_value=10, max_value=100, value=17)
 
-    /* 버튼 아이보리 톤 통일 */
-    [data-testid="stButton"] button {
-        background-color: #F5EBE6 !important;
-        color: #5C5346 !important;
-        border: 1px solid #EAE5DC !important;
-        border-radius: 12px !important;
-    }
-    [data-testid="stButton"] button:hover {
-        background-color: #ECE4DA !important;
-    }
+with col2:
+    height = st.number_input("키 (cm)", min_value=100.0, max_value=220.0, value=170.0)
+    weight = st.number_input("체중 (kg)", min_value=30.0, max_value=150.0, value=60.0)
 
-    /* 사이드바 배경도 아이보리로 맞춤 */
-    [data-testid="stSidebar"] {
-        background-color: #F9F6F0 !important;
-        border-right: 1px solid #EAE5DC;
-    }
-
-    /* 입력 영역 톤 통일 */
-    [data-testid="stMultiSelect"] div[data-baseweb="select"],
-    [data-testid="stTextArea"] textarea {
-        border: 1px solid #EAE5DC !important;
-        background-color: #FDFBF7 !important;
-        border-radius: 12px !important;
-        color: #5C5346 !important;
-    }
-    div[data-baseweb="tag"] {
-        background-color: #F0EAE1 !important;
-        border-radius: 8px !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# 3. 세션 상태 초기화
-if "diary_list" not in st.session_state:
-    st.session_state["diary_list"] = []
-
-# --- 사이드바 영역 (평소엔 숨겨져 있다가 왼쪽 위 메뉴를 누르면 나타남) ---
-with st.sidebar:
-    st.markdown("### 🧭 메뉴 이동")
-    st.info("💡 왼쪽 위의 **`>` (화살표)**를 누르면 사이드바를 다시 숨길 수 있어요!")
-    st.page_link("main.py", label="✨ 오늘 기록하기", icon="📝")
-    st.page_link("pages/2_📚_기록보기.py", label="🗓️ 감정 캘린더 보기", icon="📚")
-
-# --- 메인 화면 ---
-today_str = datetime.now().strftime("%Y년 %m월 %d일")
-st.markdown(f"### ✨ {today_str}")
-st.write("")
-
-# 기분 선택
-selected_moods = st.multiselect(
-    "😊 오늘의 기분은 어땠나요? (여러 개 선택 가능)",
-    ["😊 행복", "😌 평온", "😴 피곤", "🛋️ 귀찮음", "💧 슬픔", "🌧️ 우울", "😡 분노", "✨ 설렘"]
+activity_level = st.selectbox(
+    "평소 활동량",
+    [
+        "거의 운동하지 않음",
+        "가벼운 운동 (주 1~3회)",
+        "보통 운동 (주 3~5회)",
+        "적극적 운동 (주 6~7회)",
+        "매우 격렬한 운동"
+    ]
 )
 
-# 일기 내용 작성
-diary_text = st.text_area(
-    "오늘 어떤 하루를 보냈나요?",
-    placeholder="여기에 일기나 생각을 자유롭게 적어보세요...",
-    height=180,
-    label_visibility="collapsed"
-)
-
-# 사진 첨부
-st.markdown("➕ **오늘의 사진 첨부하기 (PNG, JPG)**")
-uploaded_file = st.file_uploader("사진 업로드", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
-
-if uploaded_file is not None:
-    st.write("")
-    st.image(uploaded_file, width=300)
+# 활동량별 계수 매핑
+activity_factors = {
+    "거의 운동하지 않음": 1.2,
+    "가벼운 운동 (주 1~3회)": 1.375,
+    "보통 운동 (주 3~5회)": 1.55,
+    "적극적 운동 (주 6~7회)": 1.725,
+    "매우 격렬한 운동": 1.9
+}
 
 st.write("")
 
-# 저장하기 버튼
-col_s1, col_s2 = st.columns([4, 1])
-with col_s2:
-    save_clicked = st.button("💾 저장하기", use_container_width=True)
-
-if save_clicked:
-    if diary_text.strip() == "":
-        st.warning("⚠️ 일기 내용을 한 줄 이상 적어주세요!")
-    elif not selected_moods:
-        st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
+# 3. 계산 버튼 및 로직
+if st.button("계산 및 분석하기", use_container_width=True):
+    # 미플린-세인트 조르(Mifflin-St Jeor) 공식으로 기초대사량(BMR) 계산
+    if gender == "남성":
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5
     else:
-        image_bytes = uploaded_file.getvalue() if uploaded_file else None
-        new_entry = {
-            "date": today_str,
-            "moods": selected_moods,
-            "text": diary_text,
-            "image": image_bytes
-        }
-        st.session_state["diary_list"].insert(0, new_entry)
-        st.success("✨ 감정 기록이 성공적으로 저장되었습니다!")
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161
+
+    # 일일 총 에너지 소비량(TDEE) 계산
+    tdee = bmr * activity_factors[activity_level]
+
+    # 권장 영양소 비율 계산 (탄수화물 50%, 단백질 30%, 지방 20% 기준)
+    carbs_g = (tdee * 0.5) / 4   # 탄수화물 1g당 4kcal
+    protein_g = (tdee * 0.3) / 4 # 단백질 1g당 4kcal
+    fat_g = (tdee * 0.2) / 9     # 지방 1g당 9kcal
+
+    st.divider()
+    st.subheader("📊 계산 결과")
+
+    m1, m2 = st.columns(2)
+    with m1:
+        st.metric(label="기초대사량 (BMR)", value=f"{bmr:.1f} kcal")
+    with m2:
+        st.metric(label="일일 총 에너지 소비량 (TDEE)", value=f"{tdee:.1f} kcal")
+
+    st.write("")
+    st.markdown("#### 🥗 권장 영양소 섭취량")
+    st.write(f"- **탄수화물**: 약 **{carbs_g:.1f}g** (주요 에너지원)")
+    st.write(f"- **단백질**: 약 **{protein_g:.1f}g** (신체 조직 구성 및 효소)")
+    st.write(f"- **지방**: 약 **{fat_g:.1f}g** (에너지 저장 및 세포막 구성)")
+
+    st.divider()
+    
+    # 4. 교과 연계 탐구 포인트 (세특 작성에 도움될 과학적 설명)
+    st.subheader("🔬 교과 연계: 우리 몸속 화학 반응")
+    st.info(
+        "**1. 세포 호흡 (에너지 생성 반응)**\n"
+        "우리가 섭취한 탄수화물(포도당)은 소화되어 세포로 전달되고, 미토콘드리아에서 산소와 반응하여 "
+        "이산화탄소와 물로 분해됩니다. 이 과정에서 발생하는 화학 에너지가 생명활동에 쓰이는 ATP를 합성합니다.\n\n"
+        "**2. 단백질의 소화와 합성**\n"
+        "섭취한 단백질은 아미노산으로 분해(가수분해)된 후, 체내로 흡수되어 유전 정보에 따라 근육, 호르몬, "
+        "화학 반응을 돕는 생체 촉매(효소)로 재조합됩니다."
+    )
