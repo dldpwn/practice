@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -14,27 +15,15 @@ st.markdown("""
     .stApp {
         background-color: #FDFBF7 !important;
     }
-    
-    /* 1. 날짜 선택 박스 배경과 일치시키기 */
-    [data-testid="stDateInput"] input {
-        border: none !important;
-        background-color: #FDFBF7 !important;
-        border-radius: 12px !important;
-    }
-    [data-testid="stDateInput"] > div {
-        border: 1px solid #EAE5DC !important;
-        background-color: #FDFBF7 !important;
-        border-radius: 12px !important;
-    }
 
-    /* 2. 다중 선택(기분 선택) 박스 배경 일치 */
+    /* 1. 다중 선택(기분 선택) 박스 배경 일치 */
     [data-testid="stMultiSelect"] div[data-baseweb="select"] {
         border: 1px solid #EAE5DC !important;
         background-color: #FDFBF7 !important;
         border-radius: 12px !important;
     }
 
-    /* 3. 텍스트 입력 영역 배경 일치 */
+    /* 2. 텍스트 입력 영역 배경 일치 */
     [data-testid="stTextArea"] textarea {
         border: 1px solid #EAE5DC !important;
         background-color: #FDFBF7 !important;
@@ -42,7 +31,7 @@ st.markdown("""
         padding: 15px !important;
     }
 
-    /* 4. 사진 첨부 파일 업로더 배경 일치 */
+    /* 3. 사진 첨부 파일 업로더 배경 일치 */
     [data-testid="stFileUploader"] {
         background-color: #FDFBF7 !important;
         border: 1px solid #EAE5DC !important;
@@ -80,10 +69,10 @@ if st.session_state["current_page"] == "write":
             st.session_state["current_page"] = "archive"
             st.rerun()
 
-    st.subheader("✍️ 오늘 하루 기록하기")
-
-    # 날짜 선택
-    diary_date = st.date_input("📅 날짜 선택", label_visibility="collapsed")
+    # 💡 오늘 날짜를 가져와서 감성적인 큰 타이틀로 표시
+    today_str = datetime.now().strftime("%Y년 %m월 %d일")
+    st.markdown(f"### ✨ {today_str}")
+    st.write("")
 
     # 감정 다중 선택 옵션
     selected_moods = st.multiselect(
@@ -116,7 +105,7 @@ if st.session_state["current_page"] == "write":
 
     st.write("")
 
-    # 💡 '저장하기' 버튼을 '기록 보기' 버튼처럼 오른쪽에 배치
+    # '저장하기' 버튼 (오른쪽 정렬)
     col_save_left, col_save_right = st.columns([4, 1])
     with col_save_right:
         if st.button("💾 저장하기", use_container_width=True):
@@ -128,7 +117,7 @@ if st.session_state["current_page"] == "write":
                 image_bytes = uploaded_file.getvalue() if uploaded_file else None
 
                 new_entry = {
-                    "date": str(diary_date),
+                    "date": today_str,
                     "moods": selected_moods,
                     "text": diary_text,
                     "image": image_bytes
