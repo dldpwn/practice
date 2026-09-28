@@ -18,7 +18,8 @@ with st.sidebar:
     st.markdown("### 🧭 메뉴 이동")
     st.info("💡 왼쪽 위의 **`>` (화살표)**를 누르면 사이드바를 다시 숨길 수 있어요!")
     st.page_link("main.py", label="🧪 영양소 & 화학 계산기", icon="🧮")
-    st.page_link("pages/calculate.py", label="📝 나의 탐구 기록장", icon="📚")
+    # 파일 이름을 반영하여 경로를 pages/calculate.py로 수정했습니다.
+    st.page_link("pages/calculate.py", label="📄 계산 서브 페이지", icon="📄")
 
 # --- 메인 화면 ---
 st.title("🧪 내 몸에 맞는 영양소 & 화학 반응 계산기")
