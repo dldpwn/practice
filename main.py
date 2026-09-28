@@ -133,7 +133,7 @@ if st.session_state["current_page"] == "write":
         label_visibility="collapsed"
     )
 
-    # 💡 사진을 업로드했을 때 캡션 없이 깔끔한 이미지 미리보기만 띄우기
+    # 사진을 업로드했을 때 캡션 없이 깔끔한 이미지 미리보기만 띄우기
     if uploaded_file is not None:
         st.write("")
         st.image(uploaded_file, width=300)
@@ -143,23 +143,26 @@ if st.session_state["current_page"] == "write":
     # '저장하기' 버튼 (오른쪽 정렬)
     col_save_left, col_save_right = st.columns([4, 1])
     with col_save_right:
-        if st.button("💾 저장하기", use_container_width=True):
-            if diary_text.strip() == "":
-                st.warning("⚠️ 일기 내용을 한 줄 이상 적어주세요!")
-            elif not selected_moods:
-                st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
-            else:
-                image_bytes = uploaded_file.getvalue() if uploaded_file else None
+        save_clicked = st.button("💾 저장하기", use_container_width=True)
 
-                new_entry = {
-                    "date": today_str,
-                    "moods": selected_moods,
-                    "text": diary_text,
-                    "image": image_bytes
-                }
-                
-                st.session_state["diary_list"].insert(0, new_entry)
-                st.success("✨ 사진과 함께 감정 기록이 성공적으로 저장되었습니다!")
+    # 💡 경고 및 성공 메시지가 버튼 칸에 갇히지 않고 가로로 길게 출력되도록 밖으로 배치
+    if save_clicked:
+        if diary_text.strip() == "":
+            st.warning("⚠️ 일기 내용을 한 줄 이상 적어주세요!")
+        elif not selected_moods:
+            st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
+        else:
+            image_bytes = uploaded_file.getvalue() if uploaded_file else None
+
+            new_entry = {
+                "date": today_str,
+                "moods": selected_moods,
+                "text": diary_text,
+                "image": image_bytes
+            }
+            
+            st.session_state["diary_list"].insert(0, new_entry)
+            st.success("✨ 사진과 함께 감정 기록이 성공적으로 저장되었습니다!")
 
 # -------------------------------------------------------------------------
 # [페이지 2] 지난 기록 보기 화면
@@ -187,3 +190,4 @@ elif st.session_state["current_page"] == "archive":
                     st.image(entry["image"], use_container_width=True)
                 
                 st.markdown(f"**✍️ 내용:** {entry['text']}")
+
