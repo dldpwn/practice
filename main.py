@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 파일명 숨기는 CSS
+# 2. 감성적인 웹폰트 및 업로드 파일 정보 박스 숨기는 CSS
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -39,7 +39,7 @@ st.markdown("""
         padding: 15px !important;
     }
 
-    /* 3. 파일 업로더 불필요한 영역 숨기기 및 파일명 안 보이게 처리 */
+    /* 3. 파일 업로더 디자인 정돈 및 업로드된 파일 정보(파일명, 용량) 숨기기 */
     [data-testid="stFileUploader"] {
         background-color: transparent !important;
         border: none !important;
@@ -53,7 +53,7 @@ st.markdown("""
         min-height: auto !important;
     }
 
-    /* 드래그 앤 드롭 안내 문구 및 업로드된 파일 이름(파일명) 숨기기 */
+    /* 드래그 앤 드롭 안내 및 파일명/용량 배지 숨기기 */
     [data-testid="stFileUploader"] section div span,
     [data-testid="stFileUploader"] section div small,
     [data-testid="stFileUploader"] section div p,
@@ -133,10 +133,10 @@ if st.session_state["current_page"] == "write":
         label_visibility="collapsed"
     )
 
-    # 사진을 업로드했을 때 파일명은 안 나오고 아래에 이미지 썸네일만 깔끔하게 노출
+    # 💡 사진을 업로드했을 때 캡션 없이 깔끔한 이미지 미리보기만 띄우기
     if uploaded_file is not None:
         st.write("")
-        st.image(uploaded_file, caption="📷 첨부된 사진 미리보기", width=300)
+        st.image(uploaded_file, width=300)
 
     st.write("")
 
@@ -187,4 +187,3 @@ elif st.session_state["current_page"] == "archive":
                     st.image(entry["image"], use_container_width=True)
                 
                 st.markdown(f"**✍️ 내용:** {entry['text']}")
-
