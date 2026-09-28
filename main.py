@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 파일 업로더 박스 슬림하게 변경하는 CSS
+# 2. 감성적인 웹폰트 및 업로드 박스 숨기고 버튼만 남기는 CSS
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -39,7 +39,7 @@ st.markdown("""
         padding: 15px !important;
     }
 
-    /* 3. 커다란 업로드 박스는 숨기고 버튼 형태만 깔끔하게 유지 */
+    /* 3. 파일 업로더의 커다란 회색 박스 영역을 완전히 투명하게 숨기기 */
     [data-testid="stFileUploader"] {
         background-color: transparent !important;
         border: none !important;
@@ -47,16 +47,26 @@ st.markdown("""
     }
     
     [data-testid="stFileUploader"] section {
-        background-color: #FDFBF7 !important;
-        border: 1px solid #EAE5DC !important;
-        border-radius: 12px !important;
-        padding: 0px 10px !important;
-        min-height: 45px !important;
+        background-color: transparent !important;
+        border: none !important;
+        padding: 0px !important;
+        min-height: auto !important;
     }
 
-    /* 불필요한 안내 텍스트 숨기기 */
-    [data-testid="stFileUploader"] section div small {
+    /* 드래그 앤 드롭 안내 문구 및 불필요한 텍스트 숨기기 */
+    [data-testid="stFileUploader"] section div span,
+    [data-testid="stFileUploader"] section div small,
+    [data-testid="stFileUploader"] section div p {
         display: none !important;
+    }
+
+    /* 오직 'Browse files' (파일 찾기/플러스) 버튼만 깔끔하게 보이도록 설정 */
+    [data-testid="stFileUploader"] button {
+        background-color: #F5EBE6 !important;
+        color: #5C5346 !important;
+        border: 1px solid #EAE5DC !important;
+        border-radius: 10px !important;
+        font-family: 'Gowun Dodum', sans-serif !important;
     }
     
     /* 포커스 시 테두리 색상 부드럽게 유지 */
@@ -114,7 +124,7 @@ if st.session_state["current_page"] == "write":
         label_visibility="collapsed"
     )
 
-    # 오늘의 사진 첨부하기 텍스트와 슬림해진 업로드 버튼
+    # 오늘의 사진 첨부하기 문구와 오직 버튼만 있는 업로드 영역
     st.markdown("➕ **오늘의 사진 첨부하기 (PNG, JPG)**")
     uploaded_file = st.file_uploader(
         "사진 업로드",
@@ -171,4 +181,3 @@ elif st.session_state["current_page"] == "archive":
                     st.image(entry["image"], use_container_width=True)
                 
                 st.markdown(f"**✍️ 내용:** {entry['text']}")
-
