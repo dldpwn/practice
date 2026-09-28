@@ -1,13 +1,37 @@
 import streamlit as st
 
-# 1. 페이지 기본 설정 (와이드 레이아웃 적용)
+# 1. 페이지 기본 설정
 st.set_page_config(
     page_title="Mood & Music Diary",
     page_icon="🎵",
     layout="centered"
 )
 
-# 2. 세션 상태 초기화
+# 2. 💡 감성적인 배경 톤 및 텍스트 입력창 테두리를 없애는 커스텀 CSS 적용
+st.markdown("""
+    <style>
+    /* 전체 앱 배경을 부드러운 미색/아이보리 톤으로 변경 */
+    .stApp {
+        background-color: #FDFBF7;
+    }
+    
+    /* 텍스트 입력창(text_area) 테두리 제거 및 배경 투명화/라운드 처리 */
+    textarea[aria-label="오늘 어떤 하루를 보냈나요?"] {
+        border: none !important;
+        background-color: #F4F1EA !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+    }
+    
+    /* 포커스될 때 생기는 기본 파란색 테두리 제거 */
+    textarea[aria-label="오늘 어떤 하루를 보냈나요?"]:focus {
+        box-shadow: none !important;
+        border: 1px solid #E2DDD5 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 3. 세션 상태 초기화
 if "diary_list" not in st.session_state:
     st.session_state["diary_list"] = []
 
@@ -46,15 +70,15 @@ if st.session_state["current_page"] == "write":
         ]
     )
 
-    # 일기 내용 작성 텍스트 박스
+    # 일기 내용 작성 텍스트 박스 (테두리가 깔끔하게 제거된 영역)
     diary_text = st.text_area(
         "오늘 어떤 하루를 보냈나요?",
         placeholder="여기에 일기나 생각을 자유롭게 적어보세요...",
-        height=150,
+        height=180,
         label_visibility="collapsed"
     )
 
-    # 💡 긍정적인 플러스 버튼 느낌의 사진 첨부 파일 업로더
+    # 사진 첨부 파일 업로더
     uploaded_file = st.file_uploader(
         "➕ 오늘의 사진 첨부하기 (PNG, JPG)",
         type=["png", "jpg", "jpeg"]
@@ -67,7 +91,6 @@ if st.session_state["current_page"] == "write":
         elif not selected_moods:
             st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
         else:
-            # 사진이 업로드된 경우 바이트 데이터로 변환해서 저장
             image_bytes = uploaded_file.getvalue() if uploaded_file else None
 
             new_entry = {
@@ -102,7 +125,6 @@ elif st.session_state["current_page"] == "archive":
                 st.markdown(f"**📅 날짜:** {entry['date']}")
                 st.markdown(f"**🏷️ 기분:** {moods_str}")
                 
-                # 💡 저장된 사진이 있다면 카드 안에 예쁘게 출력
                 if entry["image"]:
                     st.image(entry["image"], use_container_width=True)
                 
