@@ -38,6 +38,14 @@ st.markdown("""
         border-radius: 12px !important;
         padding: 15px !important;
     }
+
+    /* 3. 사진 첨부 파일 업로더 영역 깔끔하게 정돈 */
+    [data-testid="stFileUploader"] {
+        border: 1px solid #EAE5DC !important;
+        border-radius: 12px !important;
+        background-color: #FDFBF7 !important;
+        padding: 10px !important;
+    }
     
     /* 포커스 시 테두리 색상 부드럽게 유지 */
     input:focus, textarea:focus, div[data-baseweb="select"]:focus-within {
@@ -94,6 +102,12 @@ if st.session_state["current_page"] == "write":
         label_visibility="collapsed"
     )
 
+    # 💡 깔끔하게 다시 추가된 사진 첨부 파일 업로더
+    uploaded_file = st.file_uploader(
+        "➕ 오늘의 사진 첨부하기 (PNG, JPG)",
+        type=["png", "jpg", "jpeg"]
+    )
+
     st.write("")
 
     # '저장하기' 버튼 (오른쪽 정렬)
@@ -105,14 +119,17 @@ if st.session_state["current_page"] == "write":
             elif not selected_moods:
                 st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
             else:
+                image_bytes = uploaded_file.getvalue() if uploaded_file else None
+
                 new_entry = {
                     "date": today_str,
                     "moods": selected_moods,
-                    "text": diary_text
+                    "text": diary_text,
+                    "image": image_bytes
                 }
                 
                 st.session_state["diary_list"].insert(0, new_entry)
-                st.success("✨ 감정 기록이 성공적으로 저장되었습니다!")
+                st.success("✨ 사진과 함께 감정 기록이 성공적으로 저장되었습니다!")
 
 # -------------------------------------------------------------------------
 # [페이지 2] 지난 기록 보기 화면
@@ -135,4 +152,8 @@ elif st.session_state["current_page"] == "archive":
                 moods_str = ", ".join(entry["moods"])
                 st.markdown(f"**📅 날짜:** {entry['date']}")
                 st.markdown(f"**🏷️ 기분:** {moods_str}")
+                
+                if entry.get("image"):
+                    st.image(entry["image"], use_container_width=True)
+                
                 st.markdown(f"**✍️ 내용:** {entry['text']}")
