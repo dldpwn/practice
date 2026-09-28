@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 스타일 설정
+# 2. 감성적인 웹폰트 및 파일 업로더 박스 커스텀 CSS
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -39,12 +39,24 @@ st.markdown("""
         padding: 15px !important;
     }
 
-    /* 3. 사진 첨부 파일 업로더 영역 깔끔하게 정돈 */
+    /* 3. 파일 업로더 외곽 박스를 완전히 감싸고 불필요한 텍스트 숨기기 */
     [data-testid="stFileUploader"] {
-        border: 1px solid #EAE5DC !important;
-        border-radius: 12px !important;
+        background-color: transparent !important;
+        border: none !important;
+        padding: 0px !important;
+    }
+    
+    /* 파일 업로더 내부의 복잡한 안내 문구 숨기기 */
+    [data-testid="stFileUploader"] section div span,
+    [data-testid="stFileUploader"] section div small {
+        display: none !important;
+    }
+
+    [data-testid="stFileUploader"] section {
         background-color: #FDFBF7 !important;
-        padding: 10px !important;
+        border: 1px dashed #D5CEC3 !important;
+        border-radius: 12px !important;
+        padding: 5px !important;
     }
     
     /* 포커스 시 테두리 색상 부드럽게 유지 */
@@ -102,10 +114,12 @@ if st.session_state["current_page"] == "write":
         label_visibility="collapsed"
     )
 
-    # 💡 깔끔하게 다시 추가된 사진 첨부 파일 업로더
+    # 깔끔한 커스텀 텍스트 라벨과 미니멀해진 업로드 영역
+    st.markdown("➕ **오늘의 사진 첨부하기 (PNG, JPG)**")
     uploaded_file = st.file_uploader(
-        "➕ 오늘의 사진 첨부하기 (PNG, JPG)",
-        type=["png", "jpg", "jpeg"]
+        "사진 업로드",
+        type=["png", "jpg", "jpeg"],
+        label_visibility="collapsed"
     )
 
     st.write("")
