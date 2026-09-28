@@ -19,9 +19,9 @@ st.subheader("📝 오늘 하루 기록하기")
 # 날짜 선택
 diary_date = st.date_input("📅 날짜 선택")
 
-# 💡 [여기에 넣기!] 직관적인 감정 선택 옵션 적용
-mood = st.selectbox(
-    "😊 오늘의 기분은 어떤가요?",
+# 💡 여러 개 선택할 수 있도록 multiselect로 변경한 감정 선택 옵션
+selected_moods = st.multiselect(
+    "😊 오늘의 기분은 어땠나요? (여러 개 선택 가능)",
     [
         "😊 행복",
         "😌 평온",
@@ -45,5 +45,8 @@ diary_text = st.text_area(
 if st.button("💾 다이어리 저장하기", use_container_width=True):
     if diary_text.strip() == "":
         st.warning("⚠️ 일기 내용을 한 줄 이상 적어주세요!")
+    elif not selected_moods:
+        st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
     else:
-        st.success(f"✨ [{diary_date}] ({mood}) 감정 기록이 성공적으로 작성되었습니다!")
+        moods_str = ", ".join(selected_moods)
+        st.success(f"✨ [{diary_date}] ({moods_str}) 감정 기록이 성공적으로 작성되었습니다!")
