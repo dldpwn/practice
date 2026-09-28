@@ -73,7 +73,7 @@ if "current_page" not in st.session_state:
 # -------------------------------------------------------------------------
 if st.session_state["current_page"] == "write":
     
-    # 상단 '기록 보기' 버튼
+    # 상단 '기록 보기' 버튼 (오른쪽 정렬)
     col1, col2 = st.columns([4, 1])
     with col2:
         if st.button("📚 기록 보기", use_container_width=True):
@@ -116,9 +116,9 @@ if st.session_state["current_page"] == "write":
 
     st.write("")
 
-    # 💡 '기록 보기' 버튼과 형태를 맞춘 하단 저장 버튼 영역 (컬러감을 주어 눈에 띄게 배치)
-    col_save1, col_save2, col_save3 = st.columns([1, 2, 1])
-    with col_save2:
+    # 💡 '저장하기' 버튼을 '기록 보기' 버튼처럼 오른쪽에 배치
+    col_save_left, col_save_right = st.columns([4, 1])
+    with col_save_right:
         if st.button("💾 저장하기", use_container_width=True):
             if diary_text.strip() == "":
                 st.warning("⚠️ 일기 내용을 한 줄 이상 적어주세요!")
