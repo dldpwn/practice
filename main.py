@@ -8,30 +8,49 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 기분 선택 태그 배경색 변경 CSS
+# 2. 스트림릿 기본 스타일을 완전히 지우고 아이보리 톤으로 통일하는 CSS
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
     @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
 
-    /* 전체 앱 및 모든 컴포넌트의 기본 폰트를 동글동글한 폰트로 지정 */
+    /* 전체 앱 및 모든 컴포넌트의 기본 폰트 설정 */
     .stApp, * {
         font-family: 'Gowun Dodum', sans-serif !important;
     }
 
-    /* 전체 앱 배경을 부드러운 아이보리 톤으로 설정 */
+    /* 전체 앱 배경 아이보리 톤으로 고정 */
     .stApp {
         background-color: #FDFBF7 !important;
     }
 
-    /* 1. 다중 선택(기분 선택) 박스 테두리 및 배경 설정 */
+    /* 1. 모든 버튼(저장하기, 기록 보기, 페이지 이동 등) 아이보리/베이지 톤으로 강제 변경 */
+    [data-testid="stButton"] button {
+        background-color: #F5EBE6 !important;
+        color: #5C5346 !important;
+        border: 1px solid #EAE5DC !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stButton"] button:hover {
+        background-color: #ECE4DA !important;
+        border-color: #D5CEC3 !important;
+        color: #3C352B !important;
+    }
+    [data-testid="stButton"] button:active, [data-testid="stButton"] button:focus {
+        background-color: #E6DCF0 !important;
+        color: #5C5346 !important;
+        border-color: #C5BCB3 !important;
+    }
+
+    /* 2. 다중 선택(기분 선택) 박스 테두리 및 배경 */
     [data-testid="stMultiSelect"] div[data-baseweb="select"] {
         border: 1px solid #EAE5DC !important;
         background-color: #FDFBF7 !important;
         border-radius: 12px !important;
     }
 
-    /* 💡 기분 선택 시 선택된 항목(태그)의 빨간색 배경을 차분한 베이지톤으로 변경 */
+    /* 3. 기분 선택 시 선택된 항목(태그) 배경을 차분한 베이지톤으로 변경 */
     div[data-baseweb="tag"] {
         background-color: #F0EAE1 !important;
         border-radius: 8px !important;
@@ -40,15 +59,16 @@ st.markdown("""
         color: #5C5346 !important;
     }
 
-    /* 2. 텍스트 입력 영역 테두리 및 배경 */
+    /* 4. 텍스트 입력 영역 테두리 및 배경 */
     [data-testid="stTextArea"] textarea {
         border: 1px solid #EAE5DC !important;
         background-color: #FDFBF7 !important;
         border-radius: 12px !important;
         padding: 15px !important;
+        color: #5C5346 !important;
     }
 
-    /* 3. 파일 업로더 디자인 정돈 및 업로드된 파일 정보(파일명, 용량) 숨기기 */
+    /* 5. 파일 업로더 영역 정돈 */
     [data-testid="stFileUploader"] {
         background-color: transparent !important;
         border: none !important;
@@ -62,7 +82,7 @@ st.markdown("""
         min-height: auto !important;
     }
 
-    /* 드래그 앤 드롭 안내 및 파일명/용량 배지 숨기기 */
+    /* 불필요한 안내 텍스트 숨기기 */
     [data-testid="stFileUploader"] section div span,
     [data-testid="stFileUploader"] section div small,
     [data-testid="stFileUploader"] section div p,
@@ -70,16 +90,15 @@ st.markdown("""
         display: none !important;
     }
 
-    /* 파일 선택 버튼 아기자기하게 디자인 */
+    /* 파일 업로더 안의 파일 선택 버튼도 동일한 톤으로 맞춤 */
     [data-testid="stFileUploader"] button {
         background-color: #F5EBE6 !important;
         color: #5C5346 !important;
         border: 1px solid #EAE5DC !important;
         border-radius: 10px !important;
-        font-family: 'Gowun Dodum', sans-serif !important;
     }
     
-    /* 포커스 시 테두리 색상 부드럽게 유지 */
+    /* 포커스 시 스트림릿 기본 파란색 효과 제거 */
     input:focus, textarea:focus, div[data-baseweb="select"]:focus-within {
         box-shadow: none !important;
         border-color: #C5BCB3 !important;
@@ -199,3 +218,4 @@ elif st.session_state["current_page"] == "archive":
                     st.image(entry["image"], use_container_width=True)
                 
                 st.markdown(f"**✍️ 내용:** {entry['text']}")
+
