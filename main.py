@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 기분 선택 빨간색 배경 제거 CSS
+# 2. 감성적인 웹폰트 및 기분 선택 태그 배경색 변경 CSS
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -31,11 +31,13 @@ st.markdown("""
         border-radius: 12px !important;
     }
 
-    /* 💡 기분 선택 시 아이템(태그)에 들어가는 기본 빨간색/포인트 배경 없애고 차분하게 변경 */
-    [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+    /* 💡 기분 선택 시 선택된 항목(태그)의 빨간색 배경을 차분한 베이지톤으로 변경 */
+    div[data-baseweb="tag"] {
         background-color: #F0EAE1 !important;
-        color: #5C5346 !important;
         border-radius: 8px !important;
+    }
+    div[data-baseweb="tag"] span {
+        color: #5C5346 !important;
     }
 
     /* 2. 텍스트 입력 영역 테두리 및 배경 */
