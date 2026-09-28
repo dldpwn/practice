@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 업로드 박스 텍스트 겹침 현상 완벽 해결 CSS
+# 2. 감성적인 웹폰트 및 스타일 설정
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -39,13 +39,7 @@ st.markdown("""
         padding: 15px !important;
     }
 
-    /* 3. 파일 업로더 내부 중복 글씨(uploadupload 등) 숨기기 */
-    [data-testid="stFileUploader"] section div div span,
-    [data-testid="stFileUploader"] section div div small {
-        display: none !important;
-    }
-    
-    /* 파일 업로더 테두리 감성적으로 맞추기 */
+    /* 3. 파일 업로더 외곽선 디자인 통일 */
     [data-testid="stFileUploader"] {
         border: 1px solid #EAE5DC !important;
         border-radius: 12px !important;
@@ -112,12 +106,10 @@ if st.session_state["current_page"] == "write":
         label_visibility="collapsed"
     )
 
-    # 💡 깔끔한 안내 문구를 먼저 보여주고, 파일 업로더는 텍스트 없이 작동하도록 설정
-    st.markdown("➕ **오늘의 사진 첨부하기 (PNG, JPG)**")
+    # 새로 깔끔하게 다시 작성된 사진 첨부 파일 업로더
     uploaded_file = st.file_uploader(
-        "사진 업로드",
-        type=["png", "jpg", "jpeg"],
-        label_visibility="collapsed"
+        "➕ 오늘의 사진 첨부하기 (PNG, JPG)",
+        type=["png", "jpg", "jpeg"]
     )
 
     st.write("")
