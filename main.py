@@ -7,19 +7,19 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 세션 상태 초기화 (다이어리 리스트와 현재 페이지 상태 저장)
+# 2. 세션 상태 초기화
 if "diary_list" not in st.session_state:
     st.session_state["diary_list"] = []
 
 if "current_page" not in st.session_state:
-    st.session_state["current_page"] = "write"  # "write" 또는 "archive"
+    st.session_state["current_page"] = "write"
 
 # -------------------------------------------------------------------------
-# [페이지 1] 오늘 하루 기록하기 화면 (기본 화면)
+# [페이지 1] 오늘 하루 기록하기 화면
 # -------------------------------------------------------------------------
 if st.session_state["current_page"] == "write":
     
-    # 💡 화면 위쪽 우측(또는 상단)에 배치한 '지난 기록 보기' 네모 버튼
+    # 상단 '기록 보기' 버튼
     col1, col2 = st.columns([4, 1])
     with col2:
         if st.button("📚 기록 보기", use_container_width=True):
@@ -50,8 +50,14 @@ if st.session_state["current_page"] == "write":
     diary_text = st.text_area(
         "오늘 어떤 하루를 보냈나요?",
         placeholder="여기에 일기나 생각을 자유롭게 적어보세요...",
-        height=200,
+        height=150,
         label_visibility="collapsed"
+    )
+
+    # 💡 긍정적인 플러스 버튼 느낌의 사진 첨부 파일 업로더
+    uploaded_file = st.file_uploader(
+        "➕ 오늘의 사진 첨부하기 (PNG, JPG)",
+        type=["png", "jpg", "jpeg"]
     )
 
     # 저장 버튼 영역
@@ -61,21 +67,25 @@ if st.session_state["current_page"] == "write":
         elif not selected_moods:
             st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
         else:
+            # 사진이 업로드된 경우 바이트 데이터로 변환해서 저장
+            image_bytes = uploaded_file.getvalue() if uploaded_file else None
+
             new_entry = {
                 "date": str(diary_date),
                 "moods": selected_moods,
-                "text": diary_text
+                "text": diary_text,
+                "image": image_bytes
             }
-            # 세션 리스트에 데이터 추가 (가장 최근 것이 위로 오게)
+            
             st.session_state["diary_list"].insert(0, new_entry)
-            st.success("✨ 감정 기록이 성공적으로 저장되었습니다!")
+            st.success("✨ 사진과 함께 감정 기록이 성공적으로 저장되었습니다!")
 
 # -------------------------------------------------------------------------
 # [페이지 2] 지난 기록 보기 화면
 # -------------------------------------------------------------------------
 elif st.session_state["current_page"] == "archive":
     
-    # 💡 화면 위쪽에 배치한 '작성 화면으로 돌아가기' 네모 버튼
+    # 상단 '기록하러 가기' 버튼
     if st.button("⬅️ 기록하러 가기", use_container_width=True):
         st.session_state["current_page"] = "write"
         st.rerun()
@@ -91,4 +101,9 @@ elif st.session_state["current_page"] == "archive":
                 moods_str = ", ".join(entry["moods"])
                 st.markdown(f"**📅 날짜:** {entry['date']}")
                 st.markdown(f"**🏷️ 기분:** {moods_str}")
+                
+                # 💡 저장된 사진이 있다면 카드 안에 예쁘게 출력
+                if entry["image"]:
+                    st.image(entry["image"], use_container_width=True)
+                
                 st.markdown(f"**✍️ 내용:** {entry['text']}")
