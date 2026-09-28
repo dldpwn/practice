@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 💡 구글 웹폰트(Gowun Dodum)를 적용하여 전체 글씨체를 동글동글하게 변경
+# 2. 감성적인 웹폰트 및 스타일 설정 (업로드 위젯 충돌 코드 수정)
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -24,14 +24,14 @@ st.markdown("""
         background-color: #FDFBF7 !important;
     }
 
-    /* 1. 다중 선택(기분 선택) 박스 배경 일치 */
+    /* 1. 다중 선택(기분 선택) 박스 테두리 및 배경 */
     [data-testid="stMultiSelect"] div[data-baseweb="select"] {
         border: 1px solid #EAE5DC !important;
         background-color: #FDFBF7 !important;
         border-radius: 12px !important;
     }
 
-    /* 2. 텍스트 입력 영역 배경 일치 */
+    /* 2. 텍스트 입력 영역 테두리 및 배경 */
     [data-testid="stTextArea"] textarea {
         border: 1px solid #EAE5DC !important;
         background-color: #FDFBF7 !important;
@@ -39,14 +39,8 @@ st.markdown("""
         padding: 15px !important;
     }
 
-    /* 3. 사진 첨부 파일 업로더 배경 일치 */
+    /* 3. 사진 첨부 파일 업로더 스타일 정리 (글씨 겹침 현상 해결) */
     [data-testid="stFileUploader"] {
-        background-color: #FDFBF7 !important;
-        border: 1px solid #EAE5DC !important;
-        border-radius: 12px !important;
-    }
-    [data-testid="stFileUploader"] section {
-        border: none !important;
         background-color: transparent !important;
     }
     
