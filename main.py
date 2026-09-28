@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 스타일 설정 (업로드 위젯 충돌 코드 수정)
+# 2. 감성적인 웹폰트 및 업로드 박스 텍스트 겹침 현상 완벽 해결 CSS
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -39,9 +39,22 @@ st.markdown("""
         padding: 15px !important;
     }
 
-    /* 3. 사진 첨부 파일 업로더 스타일 정리 (글씨 겹침 현상 해결) */
+    /* 3. 파일 업로더 내부 중복 글씨(uploadupload 등) 숨기기 */
+    [data-testid="stFileUploader"] section div div span,
+    [data-testid="stFileUploader"] section div div small {
+        display: none !important;
+    }
+    
+    /* 파일 업로더 테두리 감성적으로 맞추기 */
     [data-testid="stFileUploader"] {
+        border: 1px solid #EAE5DC !important;
+        border-radius: 12px !important;
+        background-color: #FDFBF7 !important;
+        padding: 10px !important;
+    }
+    [data-testid="stFileUploader"] section {
         background-color: transparent !important;
+        border: none !important;
     }
     
     /* 포커스 시 테두리 색상 부드럽게 유지 */
@@ -99,10 +112,12 @@ if st.session_state["current_page"] == "write":
         label_visibility="collapsed"
     )
 
-    # 사진 첨부 파일 업로더
+    # 💡 깔끔한 안내 문구를 먼저 보여주고, 파일 업로더는 텍스트 없이 작동하도록 설정
+    st.markdown("➕ **오늘의 사진 첨부하기 (PNG, JPG)**")
     uploaded_file = st.file_uploader(
-        "➕ 오늘의 사진 첨부하기 (PNG, JPG)",
-        type=["png", "jpg", "jpeg"]
+        "사진 업로드",
+        type=["png", "jpg", "jpeg"],
+        label_visibility="collapsed"
     )
 
     st.write("")
