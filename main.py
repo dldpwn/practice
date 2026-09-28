@@ -7,7 +7,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 💡 입력 칸들의 배경색을 전체 앱 배경(#FDFBF7)과 똑같이 맞추고 테두리 제거
+# 2. 감성적인 스타일 및 입력 칸 디자인 커스텀 CSS
 st.markdown("""
     <style>
     /* 전체 앱 배경을 부드러운 아이보리 톤으로 설정 */
@@ -22,7 +22,7 @@ st.markdown("""
         border-radius: 12px !important;
     }
     [data-testid="stDateInput"] > div {
-        border: 1px solid #EAE5DC !important; /* 아주 연한 테두리만 주어 구분이 가도록 처리 */
+        border: 1px solid #EAE5DC !important;
         background-color: #FDFBF7 !important;
         border-radius: 12px !important;
     }
@@ -114,24 +114,28 @@ if st.session_state["current_page"] == "write":
         type=["png", "jpg", "jpeg"]
     )
 
-    # 저장 버튼 영역
-    if st.button("💾 저장하기", use_container_width=True):
-        if diary_text.strip() == "":
-            st.warning("⚠️ 일기 내용을 한 줄 이상 적어주세요!")
-        elif not selected_moods:
-            st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
-        else:
-            image_bytes = uploaded_file.getvalue() if uploaded_file else None
+    st.write("")
 
-            new_entry = {
-                "date": str(diary_date),
-                "moods": selected_moods,
-                "text": diary_text,
-                "image": image_bytes
-            }
-            
-            st.session_state["diary_list"].insert(0, new_entry)
-            st.success("✨ 사진과 함께 감정 기록이 성공적으로 저장되었습니다!")
+    # 💡 '기록 보기' 버튼과 형태를 맞춘 하단 저장 버튼 영역 (컬러감을 주어 눈에 띄게 배치)
+    col_save1, col_save2, col_save3 = st.columns([1, 2, 1])
+    with col_save2:
+        if st.button("💾 저장하기", use_container_width=True):
+            if diary_text.strip() == "":
+                st.warning("⚠️ 일기 내용을 한 줄 이상 적어주세요!")
+            elif not selected_moods:
+                st.warning("⚠️ 오늘의 기분을 최소 1개 이상 선택해 주세요!")
+            else:
+                image_bytes = uploaded_file.getvalue() if uploaded_file else None
+
+                new_entry = {
+                    "date": str(diary_date),
+                    "moods": selected_moods,
+                    "text": diary_text,
+                    "image": image_bytes
+                }
+                
+                st.session_state["diary_list"].insert(0, new_entry)
+                st.success("✨ 사진과 함께 감정 기록이 성공적으로 저장되었습니다!")
 
 # -------------------------------------------------------------------------
 # [페이지 2] 지난 기록 보기 화면
