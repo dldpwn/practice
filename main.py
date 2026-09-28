@@ -7,55 +7,56 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 💡 Streamlit 전용 data-testid를 활용한 강력한 테두리 제거 및 감성 스타일 CSS
+# 2. 💡 입력 칸들의 배경색을 전체 앱 배경(#FDFBF7)과 똑같이 맞추고 테두리 제거
 st.markdown("""
     <style>
-    /* 전체 앱 배경을 부드러운 아이보리 톤으로 변경 */
+    /* 전체 앱 배경을 부드러운 아이보리 톤으로 설정 */
     .stApp {
         background-color: #FDFBF7 !important;
     }
     
-    /* 1. 날짜 선택 박스 테두리 제거 */
+    /* 1. 날짜 선택 박스 배경과 일치시키기 */
     [data-testid="stDateInput"] input {
         border: none !important;
-        background-color: #F4F1EA !important;
+        background-color: #FDFBF7 !important;
         border-radius: 12px !important;
     }
     [data-testid="stDateInput"] > div {
-        border: none !important;
-        background-color: transparent !important;
-    }
-
-    /* 2. 다중 선택(기분 선택) 박스 테두리 제거 */
-    [data-testid="stMultiSelect"] div[data-baseweb="select"] {
-        border: none !important;
-        background-color: #F4F1EA !important;
+        border: 1px solid #EAE5DC !important; /* 아주 연한 테두리만 주어 구분이 가도록 처리 */
+        background-color: #FDFBF7 !important;
         border-radius: 12px !important;
     }
 
-    /* 3. 텍스트 입력 영역 테두리 제거 */
+    /* 2. 다중 선택(기분 선택) 박스 배경 일치 */
+    [data-testid="stMultiSelect"] div[data-baseweb="select"] {
+        border: 1px solid #EAE5DC !important;
+        background-color: #FDFBF7 !important;
+        border-radius: 12px !important;
+    }
+
+    /* 3. 텍스트 입력 영역 배경 일치 */
     [data-testid="stTextArea"] textarea {
-        border: none !important;
-        background-color: #F4F1EA !important;
+        border: 1px solid #EAE5DC !important;
+        background-color: #FDFBF7 !important;
         border-radius: 12px !important;
         padding: 15px !important;
     }
 
-    /* 4. 사진 첨부 파일 업로더 테두리 제거 및 배경 정리 */
+    /* 4. 사진 첨부 파일 업로더 배경 일치 */
     [data-testid="stFileUploader"] {
-        background-color: #F4F1EA !important;
+        background-color: #FDFBF7 !important;
+        border: 1px solid #EAE5DC !important;
         border-radius: 12px !important;
-        border: none !important;
     }
     [data-testid="stFileUploader"] section {
         border: none !important;
         background-color: transparent !important;
     }
     
-    /* 클릭(포커스) 시 생기는 기본 파란색 테두리/그림자 제거 */
+    /* 포커스 시 테두리 색상 부드럽게 유지 */
     input:focus, textarea:focus, div[data-baseweb="select"]:focus-within {
         box-shadow: none !important;
-        border: none !important;
+        border-color: #C5BCB3 !important;
     }
     </style>
 """, unsafe_allow_html=True)
