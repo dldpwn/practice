@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 감성적인 웹폰트 및 업로드 박스 숨기고 버튼만 남기는 CSS
+# 2. 감성적인 웹폰트 및 업로드 박스 깔끔하게 숨기는 CSS
 st.markdown("""
     <style>
     /* 구글 웹폰트 (고운 돋움) 불러오기 */
@@ -39,7 +39,7 @@ st.markdown("""
         padding: 15px !important;
     }
 
-    /* 3. 파일 업로더의 커다란 회색 박스 영역을 완전히 투명하게 숨기기 */
+    /* 3. 파일 업로더의 불필요한 회색 드래그 박스 영역 감추기 */
     [data-testid="stFileUploader"] {
         background-color: transparent !important;
         border: none !important;
@@ -53,14 +53,14 @@ st.markdown("""
         min-height: auto !important;
     }
 
-    /* 드래그 앤 드롭 안내 문구 및 불필요한 텍스트 숨기기 */
+    /* 드래그 앤 드롭 안내 문구 숨기기 */
     [data-testid="stFileUploader"] section div span,
     [data-testid="stFileUploader"] section div small,
     [data-testid="stFileUploader"] section div p {
         display: none !important;
     }
 
-    /* 오직 'Browse files' (파일 찾기/플러스) 버튼만 깔끔하게 보이도록 설정 */
+    /* 파일 선택 버튼만 아기자기하게 노출 */
     [data-testid="stFileUploader"] button {
         background-color: #F5EBE6 !important;
         color: #5C5346 !important;
@@ -124,13 +124,18 @@ if st.session_state["current_page"] == "write":
         label_visibility="collapsed"
     )
 
-    # 오늘의 사진 첨부하기 문구와 오직 버튼만 있는 업로드 영역
+    # 사진 첨부 영역
     st.markdown("➕ **오늘의 사진 첨부하기 (PNG, JPG)**")
     uploaded_file = st.file_uploader(
         "사진 업로드",
         type=["png", "jpg", "jpeg"],
         label_visibility="collapsed"
     )
+
+    # 💡 이미지를 업로드했을 때만 아래에 미리보기(썸네일)로 띄워주기
+    if uploaded_file is not None:
+        st.write("")
+        st.image(uploaded_file, caption="📷 첨부된 사진 미리보기", width=300)
 
     st.write("")
 
