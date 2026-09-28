@@ -7,54 +7,53 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 💡 모든 컴포넌트의 테두리를 완벽하게 없애는 강화된 CSS
+# 2. 💡 Streamlit 전용 data-testid를 활용한 강력한 테두리 제거 및 감성 스타일 CSS
 st.markdown("""
     <style>
     /* 전체 앱 배경을 부드러운 아이보리 톤으로 변경 */
     .stApp {
-        background-color: #FDFBF7;
+        background-color: #FDFBF7 !important;
     }
     
-    /* 멀티셀렉트(기분 선택) 박스 테두리 제거 및 배경 색상 통일 */
-    div[data-baseweb="select"] {
+    /* 1. 날짜 선택 박스 테두리 제거 */
+    [data-testid="stDateInput"] input {
+        border: none !important;
         background-color: #F4F1EA !important;
         border-radius: 12px !important;
-        border: none !important;
     }
-    div[data-baseweb="select"] > div {
+    [data-testid="stDateInput"] > div {
         border: none !important;
         background-color: transparent !important;
     }
 
-    /* 날짜 선택 입력창 박스 테두리 제거 */
-    div[data-baseweb="input"] > div {
+    /* 2. 다중 선택(기분 선택) 박스 테두리 제거 */
+    [data-testid="stMultiSelect"] div[data-baseweb="select"] {
         border: none !important;
         background-color: #F4F1EA !important;
         border-radius: 12px !important;
     }
 
-    /* 사진 첨부 파일 업로더 전체 박스 테두리 제거 */
+    /* 3. 텍스트 입력 영역 테두리 제거 */
+    [data-testid="stTextArea"] textarea {
+        border: none !important;
+        background-color: #F4F1EA !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+    }
+
+    /* 4. 사진 첨부 파일 업로더 테두리 제거 및 배경 정리 */
     [data-testid="stFileUploader"] {
         background-color: #F4F1EA !important;
         border-radius: 12px !important;
         border: none !important;
-        padding: 5px !important;
     }
     [data-testid="stFileUploader"] section {
         border: none !important;
         background-color: transparent !important;
     }
     
-    /* 텍스트 입력창(text_area) 테두리 제거 */
-    textarea[aria-label="오늘 어떤 하루를 보냈나요?"] {
-        border: none !important;
-        background-color: #F4F1EA !important;
-        border-radius: 12px !important;
-        padding: 15px !important;
-    }
-    
-    /* 포커스될 때 생기는 기본 테두리 제거 */
-    textarea:focus, input:focus {
+    /* 클릭(포커스) 시 생기는 기본 파란색 테두리/그림자 제거 */
+    input:focus, textarea:focus, div[data-baseweb="select"]:focus-within {
         box-shadow: none !important;
         border: none !important;
     }
