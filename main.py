@@ -29,12 +29,12 @@ st.markdown('신체 정보 입력', unsafe_allow_html=True)
 col1, col2 = st.columns(2)
 
 with col1:
-gender = st.selectbox("성별", ["남성", "여성"])
-age = st.number_input("나이 (세)", min_value=10, max_value=100, value=17)
+    gender = st.selectbox("성별", ["남성", "여성"])
+    age = st.number_input("나이 (세)", min_value=10, max_value=100, value=17)
 
 with col2:
-height = st.number_input("키 (cm)", min_value=100.0, max_value=220.0, value=170.0)
-weight = st.number_input("체중 (kg)", min_value=30.0, max_value=150.0, value=60.0)
+    height = st.number_input("키 (cm)", min_value=100.0, max_value=220.0, value=170.0)
+    weight = st.number_input("체중 (kg)", min_value=30.0, max_value=150.0, value=60.0)
 
 activity_level = st.selectbox(
 "평소 활동량",
