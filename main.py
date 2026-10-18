@@ -58,7 +58,7 @@ if st.button("계산 및 분석하기", use_container_width=True):
 
 # BMI 판정
     if bmi < 18.5:
-    bmi_status = "저체중"
+        bmi_status = "저체중"
     elif bmi < 23:
         bmi_status = "정상"
     elif bmi < 25:
