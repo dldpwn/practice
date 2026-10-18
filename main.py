@@ -48,7 +48,6 @@ with st.sidebar:
     st.page_link(
         "pages/calculate.py",
         label="🥗 맞춤형 식단 플래너",
-        icon="🥗"
     )
 
 # 4. 메인 화면
