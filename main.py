@@ -57,14 +57,14 @@ if st.button("계산 및 분석하기", use_container_width=True):
     bmi = weight / (height_m ** 2)
 
 # BMI 판정
-if bmi < 18.5:
+    if bmi < 18.5:
     bmi_status = "저체중"
-elif 18.5 <= bmi < 23:
-    bmi_status = "정상"
-elif 23 <= bmi < 25:
-    bmi_status = "과체중"
-else:
-    bmi_status = "비만"
+    elif bmi < 23:
+        bmi_status = "정상"
+    elif bmi < 25:
+        bmi_status = "과체중"
+    else:
+        bmi_status = "비만"
 
 # 2. 기초대사량(BMR) 계산
 if gender == "남성":
