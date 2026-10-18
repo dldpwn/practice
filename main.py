@@ -54,7 +54,7 @@ st.write("")
 if st.button("계산 및 분석하기", use_container_width=True):   
 # 1. BMI 계산 (체중(kg) / 키(m의 제곱))
     height_m = height / 100.0
-    bmi = weight / (height_m  2)
+    bmi = weight / (height_m ** 2)
 
 # BMI 판정
 if bmi < 18.5:
