@@ -1,276 +1,309 @@
 
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 st.set_page_config(
-    page_title="NutriDay | 식단 플래너",
+    page_title="식단 구성 확인 | NutriDay",
     page_icon="🥗",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="wide"
 )
 
-# ── 디자인 시스템 ──
+# -----------------------------
+# 페이지 스타일
+# -----------------------------
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+    html, body, p, label,
+    h1, h2, h3, h4, h5, h6,
+    .stMarkdown,
+    [data-testid="stMetricValue"],
+    [data-testid="stMetricLabel"] {
+        font-family: 'Gowun Dodum', sans-serif !important;
+    }
 
-:root {
-    --mint: #DDEFE5;
-    --green: #4F8069;
-    --dark: #294B3D;
-    --cream: #FAF9F3;
-    --muted: #75877C;
-}
+    .main-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #377D61;
+        margin-bottom: 0.3rem;
+    }
 
-html, body, p, label,
-h1, h2, h3, h4, h5, h6,
-.stMarkdown,
-[data-testid="stMetricValue"],
-[data-testid="stMetricLabel"] {
-    font-family: 'Gowun Dodum', sans-serif !important;
-}
+    .sub-text {
+        color: #777777;
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
 
-.stApp {
-    background: var(--cream);
-}
-
-.block-container {
-    max-width: 1120px;
-    padding-top: 2rem;
-    padding-bottom: 3rem;
-}
-
-h1, h2, h3 {
-    color: var(--dark) !important;
-}
-
-[data-testid="stMetric"] {
-    background: white;
-    border: 1px solid #E7EDE6;
-    padding: 20px;
-    border-radius: 18px;
-}
-
-[data-testid="stMetricLabel"] {
-    color: var(--muted) !important;
-}
-
-[data-testid="stMetricValue"] {
-    color: var(--dark) !important;
-}
-
-.stButton > button {
-    background: var(--green);
-    color: white;
-    border: none;
-    border-radius: 13px;
-    min-height: 46px;
-    font-family: 'Gowun Dodum', sans-serif !important;
-}
-
-.stButton > button:hover {
-    background: var(--dark);
-    color: white;
-    border: none;
-}
-
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: white;
-    border-radius: 18px;
-    border-color: #E7EDE6;
-}
-
-hr {
-    border-color: #E5EAE1;
-}
-
-#MainMenu, footer {
-    visibility: hidden;
-}
+    .info-card {
+        background-color: #F1F8F3;
+        padding: 18px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ── 사이드바 ──
+# -----------------------------
+# 사이드바
+# -----------------------------
 with st.sidebar:
-    st.markdown("## 🌿 NutriDay")
-    st.caption("나를 위한 건강 관리")
-    st.divider()
-    st.page_link("main.py", label="🏠 건강 대시보드")
-    st.page_link("pages/calculate.py", label="🥗 맞춤형 식단 플래너")
+    st.markdown("## 🥗 NutriDay")
+    st.caption("나에게 맞는 하루 영양 관리")
 
-# ── 상단 소개 ──
-st.markdown("### 🌿 NUTRIDAY")
-st.title("나만의 식단 플래너")
-st.write("하루 에너지 정보와 목표를 바탕으로 식단 예시를 구성해 보세요.")
+    st.page_link("main.py", label="🏠 메인 페이지")
+    st.page_link(
+        "pages/calculate.py",
+        label="🥗 식단 구성 확인"
+    )
 
-st.markdown("""
-<div style="
-    background: linear-gradient(120deg, #DDEFE5, #F0F4DF);
-    padding: 25px;
-    border-radius: 22px;
-    margin: 18px 0 25px 0;
-">
-    <div style="font-size:14px; color:#4F8069;">
-        YOUR DAILY MEAL PLAN
-    </div>
-    <div style="font-size:25px; color:#294B3D; font-weight:bold;
-                margin-top:8px;">
-        오늘의 식단을 계획해 볼까요? 🥑
-    </div>
-    <div style="font-size:14px; color:#526D5D; margin-top:8px;">
-        목표 칼로리와 영양소 배분을 살펴보세요.
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# -----------------------------
+# 제목
+# -----------------------------
+st.markdown(
+    '<div class="main-title">🥗 하루 식단 구성 확인</div>',
+    unsafe_allow_html=True
+)
 
-# ── 목표 설정 ──
-st.subheader("🎯 목표 설정")
+st.markdown(
+    '<div class="sub-text">'
+    '하루 에너지 참고값을 기준으로 영양소별 에너지 구성을 확인해 보세요.'
+    '</div>',
+    unsafe_allow_html=True
+)
 
-saved_tdee = st.session_state.get("calculated_tdee", 2000.0)
-default_tdee = float(min(4000.0, max(1000.0, saved_tdee)))
+# -----------------------------
+# 하루 에너지 참고값
+# -----------------------------
+# 메인 페이지에서 전달한 값이 있으면 사용하고,
+# 없으면 기본값 2000 kcal 사용
+daily_energy = st.session_state.get(
+    "meal_plan_calories",
+    2000
+)
 
-with st.container(border=True):
-    c1, c2 = st.columns(2)
+st.markdown("### 🔥 하루 에너지 참고값")
 
-    with c1:
-        target_tdee = st.number_input(
-            "하루 총 에너지 소비량 (kcal)",
-            min_value=1000.0,
-            max_value=4000.0,
-            value=default_tdee,
-            step=50.0,
-            help="메인 페이지에서 계산한 값이 있으면 자동으로 입력됩니다."
-        )
+daily_energy = st.number_input(
+    "하루 에너지 참고값 (kcal)",
+    min_value=500,
+    max_value=6000,
+    value=int(daily_energy),
+    step=100,
+    help="메인 페이지에서 계산한 값이 있다면 해당 값을 기준으로 시작해요."
+)
 
-    with c2:
-        goal = st.selectbox(
-            "식단 목표",
-            [
-                "에너지 균형 참고하기",
-                "체중 감량 목표 참고 (-500 kcal)",
-                "근육 증가 목표 참고 (+300 kcal)"
-            ]
-        )
+# -----------------------------
+# 식단 목표 선택
+# -----------------------------
+st.markdown("### 🎯 식단 목표")
 
-if "감량" in goal:
-    final_calories = target_tdee - 500
-elif "증가" in goal:
-    final_calories = target_tdee + 300
+goal = st.radio(
+    "목표를 선택하세요.",
+    ["에너지 균형", "체중 감량 참고", "근육 증가 참고"],
+    horizontal=True
+)
+
+if goal == "에너지 균형":
+    target_energy = daily_energy
+elif goal == "체중 감량 참고":
+    target_energy = max(500, daily_energy - 500)
 else:
-    final_calories = target_tdee
+    target_energy = daily_energy + 300
 
-st.write("")
+st.session_state["meal_plan_calories"] = target_energy
 
-with st.container(border=True):
-    st.markdown("#### 🌱 설정한 하루 에너지 목표")
-    st.metric("목표 에너지", f"{final_calories:,.0f} kcal")
-    st.caption(
-        "이 값은 단순 계산 예시입니다. 특히 성장기에는 "
-        "임의의 감량·증량 칼로리 목표를 적용하지 마세요."
-    )
+st.metric(
+    label="목표 하루 에너지",
+    value=f"{target_energy:,.0f} kcal"
+)
 
-# ── 식단 생성 ──
-if st.button("🍽️ 식단 예시 구성하기", use_container_width=True):
-    st.session_state["meal_plan_calories"] = final_calories
-    st.session_state["meal_plan_goal"] = goal
-
-if "meal_plan_calories" in st.session_state:
-    calories = st.session_state["meal_plan_calories"]
-
-    # 에너지 배분 예시
-    carb_g = calories * 0.5 / 4
-    protein_g = calories * 0.3 / 4
-    fat_g = calories * 0.2 / 9
-
-    st.divider()
-    st.subheader("📊 하루 영양소 구성 예시")
-
-    metric1, metric2, metric3 = st.columns(3)
-    metric1.metric("탄수화물", f"{carb_g:.1f} g")
-    metric2.metric("단백질", f"{protein_g:.1f} g")
-    metric3.metric("지방", f"{fat_g:.1f} g")
-
-    chart_col, detail_col = st.columns([1.1, 1])
-
-    with chart_col:
-        st.markdown("#### 영양소 에너지 비율")
-        macro_data = pd.DataFrame({
-            "영양소": ["탄수화물", "단백질", "지방"],
-            "에너지 비율 (%)": [50, 30, 20]
-        })
-        st.bar_chart(
-            macro_data,
-            x="영양소",
-            y="에너지 비율 (%)",
-            color="#75A88C",
-            height=270
-        )
-
-    with detail_col:
-        st.markdown("#### 에너지 배분")
-        with st.container(border=True):
-            st.markdown("🍚 **탄수화물 · 50%**")
-            st.progress(0.5)
-            st.caption(f"약 {calories * 0.5:,.0f} kcal")
-
-        with st.container(border=True):
-            st.markdown("🥚 **단백질 · 30%**")
-            st.progress(0.3)
-            st.caption(f"약 {calories * 0.3:,.0f} kcal")
-
-        with st.container(border=True):
-            st.markdown("🥑 **지방 · 20%**")
-            st.progress(0.2)
-            st.caption(f"약 {calories * 0.2:,.0f} kcal")
-
-    st.divider()
-    st.subheader("🍽️ 하루 식사 예시")
-
-    breakfast_cal = calories * 0.3
-    lunch_cal = calories * 0.4
-    dinner_cal = calories * 0.3
-
-    tab1, tab2, tab3 = st.tabs(
-        ["🌅 아침", "☀️ 점심", "🌙 저녁"]
-    )
-
-    with tab1:
-        with st.container(border=True):
-            st.markdown("### 🌅 아침 식사")
-            st.metric("배분 에너지 예시", f"{breakfast_cal:,.0f} kcal")
-            st.markdown("- 통밀빵과 달걀")
-            st.markdown("- 과일과 견과류")
-            st.markdown("- 우유 또는 두유")
-
-    with tab2:
-        with st.container(border=True):
-            st.markdown("### ☀️ 점심 식사")
-            st.metric("배분 에너지 예시", f"{lunch_cal:,.0f} kcal")
-            st.markdown("- 현미밥 또는 잡곡밥")
-            st.markdown("- 닭고기, 생선 또는 두부")
-            st.markdown("- 다양한 채소와 반찬")
-
-    with tab3:
-        with st.container(border=True):
-            st.markdown("### 🌙 저녁 식사")
-            st.metric("배분 에너지 예시", f"{dinner_cal:,.0f} kcal")
-            st.markdown("- 고구마 또는 잡곡밥")
-            st.markdown("- 연어, 달걀 또는 두부")
-            st.markdown("- 구운 채소와 샐러드")
-
-    st.caption(
-        "음식 목록은 식단 아이디어이며 개별 음식의 실제 칼로리를 "
-        "계산한 식단표는 아닙니다. 식품 종류와 섭취량에 따라 영양소 함량은 달라집니다."
-    )
-
-else:
-    st.info("👆 목표를 설정한 다음 식단 예시 구성하기를 눌러 주세요.")
+st.caption(
+    "목표별 에너지 조정은 단순한 예시이며, 개인에게 적합한 섭취량을 "
+    "확정하는 의학적 권고는 아니에요."
+)
 
 st.divider()
-st.page_link(
-    "main.py",
-    label="← 건강 대시보드로 돌아가기",
-    icon="🏠",
+
+# -----------------------------
+# 영양소 에너지 비율 설정
+# -----------------------------
+st.markdown("### 🍚 영양소 에너지 비율")
+
+st.caption(
+    "아래 비율은 그래프 작성을 위한 예시예요. "
+    "세 영양소의 비율 합계는 100%가 되도록 계산해요."
+)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    carb_ratio = st.number_input(
+        "탄수화물 (%)",
+        min_value=0,
+        max_value=100,
+        value=50,
+        step=5
+    )
+
+with col2:
+    protein_ratio = st.number_input(
+        "단백질 (%)",
+        min_value=0,
+        max_value=100,
+        value=20,
+        step=5
+    )
+
+with col3:
+    fat_ratio = st.number_input(
+        "지방 (%)",
+        min_value=0,
+        max_value=100,
+        value=30,
+        step=5
+    )
+
+ratio_sum = carb_ratio + protein_ratio + fat_ratio
+
+if ratio_sum != 100:
+    st.warning(
+        f"현재 비율 합계는 {ratio_sum}%예요. "
+        "그래프를 보려면 세 영양소의 합계를 100%로 맞춰 주세요."
+    )
+    st.stop()
+
+# -----------------------------
+# 에너지량 및 섭취량 계산
+# -----------------------------
+carb_kcal = target_energy * carb_ratio / 100
+protein_kcal = target_energy * protein_ratio / 100
+fat_kcal = target_energy * fat_ratio / 100
+
+# 탄수화물 1g = 약 4 kcal
+# 단백질 1g = 약 4 kcal
+# 지방 1g = 약 9 kcal
+carb_g = carb_kcal / 4
+protein_g = protein_kcal / 4
+fat_g = fat_kcal / 9
+
+chart_data = pd.DataFrame({
+    "영양소": ["탄수화물", "단백질", "지방"],
+    "에너지량(kcal)": [
+        carb_kcal,
+        protein_kcal,
+        fat_kcal
+    ],
+    "에너지 비율(%)": [
+        carb_ratio,
+        protein_ratio,
+        fat_ratio
+    ],
+    "환산 섭취량(g)": [
+        carb_g,
+        protein_g,
+        fat_g
+    ]
+})
+
+# -----------------------------
+# 에너지 비율 그래프
+# -----------------------------
+st.markdown("### 📊 하루 에너지 구성 비율")
+
+st.caption(
+    f"목표 에너지 {target_energy:,.0f} kcal 기준"
+)
+
+fig = px.pie(
+    chart_data,
+    names="영양소",
+    values="에너지량(kcal)",
+    hole=0.55
+)
+
+fig.update_traces(
+    texttemplate="%{label}<br>%{percent}",
+    textposition="inside",
+    hovertemplate=(
+        "%{label}<br>"
+        "에너지량: %{value:.0f} kcal<br>"
+        "비율: %{percent}<extra></extra>"
+    )
+)
+
+fig.update_layout(
+    showlegend=True,
+    margin=dict(t=20, b=20, l=10, r=10),
+    legend_title_text="영양소"
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True,
+    key="nutrition_donut_chart"
+)
+
+# -----------------------------
+# 영양소별 계산 결과
+# -----------------------------
+st.markdown("### 📋 영양소별 계산 결과")
+
+display_data = chart_data.copy()
+
+display_data["에너지량(kcal)"] = (
+    display_data["에너지량(kcal)"].round(1)
+)
+
+display_data["에너지 비율(%)"] = (
+    display_data["에너지 비율(%)"].map(
+        lambda x: f"{x}%"
+    )
+)
+
+display_data["환산 섭취량(g)"] = (
+    display_data["환산 섭취량(g)"].round(1)
+)
+
+st.dataframe(
+    display_data,
+    hide_index=True,
     use_container_width=True
 )
-st.caption("NUTRIDAY · 나를 이해하는 건강 관리 프로젝트 🌿")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        "탄수화물",
+        f"{carb_g:,.1f} g",
+        f"{carb_kcal:,.0f} kcal"
+    )
+
+with col2:
+    st.metric(
+        "단백질",
+        f"{protein_g:,.1f} g",
+        f"{protein_kcal:,.0f} kcal"
+    )
+
+with col3:
+    st.metric(
+        "지방",
+        f"{fat_g:,.1f} g",
+        f"{fat_kcal:,.0f} kcal"
+    )
+
+# -----------------------------
+# 안내
+# -----------------------------
+st.divider()
+
+st.markdown("### 💡 알아두기")
+
+st.markdown("""
+- 이 그래프는 하루 에너지 목표를 탄수화물·단백질·지방에 배분한 **계산 예시**예요.
+- 비타민과 무기질은 에너지를 직접 제공하지 않으므로 이 에너지 비율 그래프에는 포함하지 않아요.
+- 실제 음식으로 섭취한 영양소의 양을 분석하는 기능은 아니에요.
+- 개인에게 적합한 영양 섭취량은 나이, 성장 상태, 활동량 등 여러 요소에 따라 달라질 수 있어요.
+""")
