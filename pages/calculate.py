@@ -122,7 +122,7 @@ else:
     energy_from_previous_page = True
 
 
-st.markdown("### 🔥 나의 하루 에너지 참고값")
+st.markdown("### 🔥 나의 하루 에너지")
 
 if energy_from_previous_page:
     st.success(
