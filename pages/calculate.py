@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import random
+import calendar
+from datetime import date, timedelta
 
 # ==================================================
 # 페이지 설정
@@ -49,6 +51,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 # ==================================================
 # 사이드바
 # ==================================================
@@ -57,11 +60,16 @@ with st.sidebar:
     st.markdown("## 🥗 NutriDay")
     st.caption("나에게 맞는 하루 영양 관리")
 
-    st.page_link("main.py", label="🏠 메인 페이지")
+    st.page_link(
+        "main.py",
+        label="🏠 메인 페이지"
+    )
+
     st.page_link(
         "pages/calculate.py",
         label="🥗 한 달 맞춤 식단"
     )
+
 
 # ==================================================
 # 제목
@@ -79,6 +87,7 @@ st.markdown(
     '</div>',
     unsafe_allow_html=True
 )
+
 
 # ==================================================
 # 하루 에너지 참고값 불러오기
@@ -113,6 +122,7 @@ if daily_energy is None:
 else:
     energy_from_previous_page = True
 
+
 st.markdown("### 🔥 나의 하루 에너지")
 
 if energy_from_previous_page:
@@ -133,6 +143,7 @@ else:
         value=2000,
         step=100
     )
+
 
 # ==================================================
 # 식단 설정
@@ -174,9 +185,9 @@ with col1:
 
 with col2:
 
-    # ----------------------------------------------
-    # 선호하는 음식
-    # ----------------------------------------------
+    # --------------------------------------------------
+    # 선호 음식 설정
+    # --------------------------------------------------
 
     preference_options = [
         "닭고기",
@@ -193,7 +204,8 @@ with col2:
     preference = st.multiselect(
         "선호하는 음식",
         preference_options,
-        default=["닭고기", "달걀", "채소"]
+        default=["닭고기", "달걀", "채소"],
+        key="preference_select"
     )
 
     custom_preference = []
@@ -201,7 +213,7 @@ with col2:
     if "직접 입력" in preference:
         custom_preference_text = st.text_input(
             "선호하는 음식 직접 입력",
-            placeholder="예: 버섯, 고구마, 파스타",
+            placeholder="예: 버섯, 고구마, 파스타 (쉼표로 구분)",
             key="custom_preference_text"
         )
 
@@ -213,14 +225,16 @@ with col2:
 
     all_preferences = list(dict.fromkeys(
         [
-            item for item in preference
+            item
+            for item in preference
             if item != "직접 입력"
-        ] + custom_preference
+        ]
+        + custom_preference
     ))
 
-    # ----------------------------------------------
-    # 제외할 음식
-    # ----------------------------------------------
+    # --------------------------------------------------
+    # 제외 음식 설정
+    # --------------------------------------------------
 
     excluded_options = [
         "닭고기",
@@ -236,7 +250,8 @@ with col2:
 
     excluded_foods = st.multiselect(
         "식단에서 제외할 음식",
-        excluded_options
+        excluded_options,
+        key="excluded_food_select"
     )
 
     custom_excluded = []
@@ -244,7 +259,7 @@ with col2:
     if "직접 입력" in excluded_foods:
         custom_excluded_text = st.text_input(
             "제외할 음식 직접 입력",
-            placeholder="예: 버섯, 고구마, 파스타",
+            placeholder="예: 버섯, 고구마, 파스타 (쉼표로 구분)",
             key="custom_excluded_text"
         )
 
@@ -256,230 +271,434 @@ with col2:
 
     all_excluded = list(dict.fromkeys(
         [
-            item for item in excluded_foods
+            item
+            for item in excluded_foods
             if item != "직접 입력"
-        ] + custom_excluded
+        ]
+        + custom_excluded
     ))
 
     st.caption(
-        "여러 음식은 쉼표로 구분해 입력해 주세요. "
-        "입력한 단어는 기존 메뉴 이름이나 음식 분류와 비교해요."
+        "직접 입력은 쉼표로 구분해 주세요. "
+        "입력한 단어는 기존 메뉴 이름이나 음식 분류와 "
+        "비교해 반영돼요."
     )
 
     st.caption(
-        "직접 입력은 기존 메뉴를 대상으로 작동하며, "
-        "모든 메뉴의 세부 재료를 판별하는 기능은 아니에요."
+        "알레르기가 있다면 실제 재료와 제품의 알레르기 표시도 "
+        "반드시 확인해 주세요."
     )
 
-    st.caption(
-        "알레르기가 있다면 해당 식품을 반드시 제외하고, "
-        "교차접촉 위험도 별도로 확인해야 해요."
-    )
 
 # ==================================================
 # 음식 데이터
 # ==================================================
-# 모든 영양 성분은 1회 분량 기준의 예시값입니다.
-# 실제 음식의 영양 성분과 다를 수 있습니다.
+#
+# 아래 영양 성분 수치는 메뉴별 참고용 예시값이다.
+# 실제 음식의 재료, 중량, 조리 방법에 따라 달라질 수 있다.
+#
+# 비타민 A: μg RAE
+# 비타민 C: mg
+# 비타민 D: μg
+# 기타 무기질: mg
+# ==================================================
 
 foods = {
-
     "닭고기 덮밥": {
-        "group": "닭고기", "style": "한식",
-        "kcal": 450, "carbs": 65, "protein": 28,
-        "fat": 9, "fiber": 4, "calcium": 45,
-        "iron": 2.0, "potassium": 430, "sodium": 450,
-        "vitamin_a": 35, "vitamin_c": 12, "vitamin_d": 0.2
+        "group": "닭고기",
+        "style": "한식",
+        "kcal": 450,
+        "carbs": 60,
+        "protein": 30,
+        "fat": 10,
+        "fiber": 4,
+        "calcium": 50,
+        "iron": 2.0,
+        "potassium": 450,
+        "sodium": 500,
+        "vitamin_a": 40,
+        "vitamin_c": 10,
+        "vitamin_d": 0.2
     },
 
     "두부 비빔밥": {
-        "group": "두부", "style": "한식",
-        "kcal": 430, "carbs": 68, "protein": 18,
-        "fat": 10, "fiber": 7, "calcium": 160,
-        "iron": 3.0, "potassium": 620, "sodium": 500,
-        "vitamin_a": 180, "vitamin_c": 18, "vitamin_d": 0
+        "group": "두부 채소",
+        "style": "한식",
+        "kcal": 420,
+        "carbs": 65,
+        "protein": 18,
+        "fat": 10,
+        "fiber": 7,
+        "calcium": 180,
+        "iron": 3.0,
+        "potassium": 550,
+        "sodium": 450,
+        "vitamin_a": 180,
+        "vitamin_c": 25,
+        "vitamin_d": 0.1
     },
 
     "생선구이 정식": {
-        "group": "생선", "style": "한식",
-        "kcal": 470, "carbs": 65, "protein": 27,
-        "fat": 12, "fiber": 5, "calcium": 55,
-        "iron": 2.0, "potassium": 520, "sodium": 480,
-        "vitamin_a": 30, "vitamin_c": 15, "vitamin_d": 5
+        "group": "생선",
+        "style": "한식",
+        "kcal": 480,
+        "carbs": 62,
+        "protein": 28,
+        "fat": 12,
+        "fiber": 5,
+        "calcium": 70,
+        "iron": 2.5,
+        "potassium": 520,
+        "sodium": 550,
+        "vitamin_a": 30,
+        "vitamin_c": 15,
+        "vitamin_d": 5.0
     },
 
     "소고기 채소볶음 정식": {
-        "group": "소고기", "style": "한식",
-        "kcal": 490, "carbs": 62, "protein": 29,
-        "fat": 13, "fiber": 5, "calcium": 60,
-        "iron": 3.5, "potassium": 480, "sodium": 520,
-        "vitamin_a": 100, "vitamin_c": 20, "vitamin_d": 0.2
+        "group": "소고기 채소",
+        "style": "한식",
+        "kcal": 500,
+        "carbs": 60,
+        "protein": 30,
+        "fat": 15,
+        "fiber": 5,
+        "calcium": 60,
+        "iron": 3.5,
+        "potassium": 500,
+        "sodium": 520,
+        "vitamin_a": 100,
+        "vitamin_c": 20,
+        "vitamin_d": 0.2
     },
 
     "돼지고기 채소볶음": {
-        "group": "돼지고기", "style": "한식",
-        "kcal": 480, "carbs": 60, "protein": 25,
-        "fat": 15, "fiber": 5, "calcium": 50,
-        "iron": 2.5, "potassium": 450, "sodium": 550,
-        "vitamin_a": 90, "vitamin_c": 18, "vitamin_d": 0.5
+        "group": "돼지고기 채소",
+        "style": "한식",
+        "kcal": 490,
+        "carbs": 58,
+        "protein": 27,
+        "fat": 15,
+        "fiber": 5,
+        "calcium": 55,
+        "iron": 2.5,
+        "potassium": 480,
+        "sodium": 530,
+        "vitamin_a": 90,
+        "vitamin_c": 22,
+        "vitamin_d": 0.3
     },
 
     "달걀 채소볶음밥": {
-        "group": "달걀", "style": "한식",
-        "kcal": 420, "carbs": 62, "protein": 15,
-        "fat": 12, "fiber": 4, "calcium": 65,
-        "iron": 2.0, "potassium": 350, "sodium": 430,
-        "vitamin_a": 140, "vitamin_c": 15, "vitamin_d": 1.2
+        "group": "달걀 채소",
+        "style": "한식",
+        "kcal": 430,
+        "carbs": 62,
+        "protein": 17,
+        "fat": 11,
+        "fiber": 4,
+        "calcium": 65,
+        "iron": 2.2,
+        "potassium": 400,
+        "sodium": 450,
+        "vitamin_a": 120,
+        "vitamin_c": 18,
+        "vitamin_d": 1.5
     },
 
     "닭고기 샐러드": {
-        "group": "닭고기", "style": "간편식",
-        "kcal": 350, "carbs": 25, "protein": 30,
-        "fat": 13, "fiber": 6, "calcium": 90,
-        "iron": 2.5, "potassium": 600, "sodium": 400,
-        "vitamin_a": 250, "vitamin_c": 35, "vitamin_d": 0.2
+        "group": "닭고기 채소",
+        "style": "간편식",
+        "kcal": 320,
+        "carbs": 20,
+        "protein": 30,
+        "fat": 12,
+        "fiber": 6,
+        "calcium": 100,
+        "iron": 2.0,
+        "potassium": 600,
+        "sodium": 350,
+        "vitamin_a": 250,
+        "vitamin_c": 35,
+        "vitamin_d": 0.2
     },
 
     "두부 샐러드": {
-        "group": "두부", "style": "간편식",
-        "kcal": 320, "carbs": 28, "protein": 17,
-        "fat": 14, "fiber": 7, "calcium": 180,
-        "iron": 3.0, "potassium": 520, "sodium": 350,
-        "vitamin_a": 220, "vitamin_c": 30, "vitamin_d": 0
+        "group": "두부 채소",
+        "style": "간편식",
+        "kcal": 300,
+        "carbs": 25,
+        "protein": 18,
+        "fat": 14,
+        "fiber": 7,
+        "calcium": 220,
+        "iron": 3.0,
+        "potassium": 550,
+        "sodium": 300,
+        "vitamin_a": 200,
+        "vitamin_c": 40,
+        "vitamin_d": 0.1
     },
 
     "통밀빵과 달걀": {
-        "group": "달걀", "style": "간편식",
-        "kcal": 330, "carbs": 40, "protein": 17,
-        "fat": 11, "fiber": 5, "calcium": 100,
-        "iron": 2.5, "potassium": 280, "sodium": 420,
-        "vitamin_a": 110, "vitamin_c": 0, "vitamin_d": 1.0
+        "group": "달걀",
+        "style": "간편식",
+        "kcal": 350,
+        "carbs": 42,
+        "protein": 20,
+        "fat": 11,
+        "fiber": 6,
+        "calcium": 100,
+        "iron": 2.5,
+        "potassium": 300,
+        "sodium": 400,
+        "vitamin_a": 100,
+        "vitamin_c": 2,
+        "vitamin_d": 1.2
     },
 
     "오트밀과 우유": {
-        "group": "우유", "style": "간편식",
-        "kcal": 350, "carbs": 52, "protein": 14,
-        "fat": 9, "fiber": 7, "calcium": 300,
-        "iron": 2.5, "potassium": 480, "sodium": 150,
-        "vitamin_a": 70, "vitamin_c": 2, "vitamin_d": 2.5
+        "group": "우유",
+        "style": "간편식",
+        "kcal": 330,
+        "carbs": 48,
+        "protein": 14,
+        "fat": 9,
+        "fiber": 6,
+        "calcium": 250,
+        "iron": 2.5,
+        "potassium": 420,
+        "sodium": 150,
+        "vitamin_a": 80,
+        "vitamin_c": 2,
+        "vitamin_d": 2.0
     },
 
     "과일과 요구르트": {
-        "group": "과일", "style": "간편식",
-        "kcal": 200, "carbs": 35, "protein": 7,
-        "fat": 4, "fiber": 4, "calcium": 220,
-        "iron": 0.5, "potassium": 350, "sodium": 90,
-        "vitamin_a": 30, "vitamin_c": 35, "vitamin_d": 0.5
+        "group": "과일 우유",
+        "style": "간편식",
+        "kcal": 250,
+        "carbs": 42,
+        "protein": 10,
+        "fat": 5,
+        "fiber": 4,
+        "calcium": 220,
+        "iron": 0.8,
+        "potassium": 400,
+        "sodium": 100,
+        "vitamin_a": 40,
+        "vitamin_c": 35,
+        "vitamin_d": 0.5
     },
 
     "밥과 두부조림": {
-        "group": "두부", "style": "한식",
-        "kcal": 400, "carbs": 63, "protein": 18,
-        "fat": 9, "fiber": 4, "calcium": 170,
-        "iron": 2.5, "potassium": 400, "sodium": 400,
-        "vitamin_a": 50, "vitamin_c": 8, "vitamin_d": 0
+        "group": "두부",
+        "style": "한식",
+        "kcal": 400,
+        "carbs": 60,
+        "protein": 18,
+        "fat": 10,
+        "fiber": 4,
+        "calcium": 180,
+        "iron": 3.0,
+        "potassium": 420,
+        "sodium": 420,
+        "vitamin_a": 25,
+        "vitamin_c": 5,
+        "vitamin_d": 0.1
     },
 
     "고구마와 달걀": {
-        "group": "달걀", "style": "다양",
-        "kcal": 320, "carbs": 48, "protein": 13,
-        "fat": 8, "fiber": 6, "calcium": 60,
-        "iron": 1.5, "potassium": 550, "sodium": 180,
-        "vitamin_a": 600, "vitamin_c": 15, "vitamin_d": 1
+        "group": "고구마 달걀",
+        "style": "간편식",
+        "kcal": 320,
+        "carbs": 45,
+        "protein": 15,
+        "fat": 8,
+        "fiber": 6,
+        "calcium": 70,
+        "iron": 1.8,
+        "potassium": 500,
+        "sodium": 180,
+        "vitamin_a": 700,
+        "vitamin_c": 20,
+        "vitamin_d": 1.0
     },
 
     "생선 샐러드": {
-        "group": "생선", "style": "간편식",
-        "kcal": 360, "carbs": 25, "protein": 27,
-        "fat": 15, "fiber": 6, "calcium": 100,
-        "iron": 2.0, "potassium": 500, "sodium": 420,
-        "vitamin_a": 180, "vitamin_c": 30, "vitamin_d": 5
+        "group": "생선 채소",
+        "style": "간편식",
+        "kcal": 340,
+        "carbs": 22,
+        "protein": 27,
+        "fat": 14,
+        "fiber": 6,
+        "calcium": 100,
+        "iron": 2.0,
+        "potassium": 550,
+        "sodium": 320,
+        "vitamin_a": 220,
+        "vitamin_c": 35,
+        "vitamin_d": 4.0
     },
 
     "채소 비빔밥": {
-        "group": "채소", "style": "한식",
-        "kcal": 400, "carbs": 70, "protein": 11,
-        "fat": 9, "fiber": 8, "calcium": 100,
-        "iron": 3.0, "potassium": 650, "sodium": 430,
-        "vitamin_a": 280, "vitamin_c": 25, "vitamin_d": 0
+        "group": "채소",
+        "style": "한식",
+        "kcal": 390,
+        "carbs": 68,
+        "protein": 12,
+        "fat": 8,
+        "fiber": 8,
+        "calcium": 90,
+        "iron": 2.5,
+        "potassium": 520,
+        "sodium": 420,
+        "vitamin_a": 300,
+        "vitamin_c": 40,
+        "vitamin_d": 0.1
     },
 
     "과일 오트밀": {
-        "group": "과일", "style": "간편식",
-        "kcal": 330, "carbs": 55, "protein": 11,
-        "fat": 8, "fiber": 8, "calcium": 180,
-        "iron": 2.5, "potassium": 430, "sodium": 120,
-        "vitamin_a": 30, "vitamin_c": 25, "vitamin_d": 1.5
+        "group": "과일",
+        "style": "간편식",
+        "kcal": 310,
+        "carbs": 52,
+        "protein": 10,
+        "fat": 7,
+        "fiber": 8,
+        "calcium": 100,
+        "iron": 2.5,
+        "potassium": 450,
+        "sodium": 100,
+        "vitamin_a": 50,
+        "vitamin_c": 30,
+        "vitamin_d": 0.1
     },
 
     "닭고기 채소볶음": {
-        "group": "닭고기", "style": "다양",
-        "kcal": 430, "carbs": 45, "protein": 32,
-        "fat": 12, "fiber": 6, "calcium": 80,
-        "iron": 2.5, "potassium": 520, "sodium": 420,
-        "vitamin_a": 180, "vitamin_c": 35, "vitamin_d": 0.2
+        "group": "닭고기 채소",
+        "style": "다양",
+        "kcal": 380,
+        "carbs": 30,
+        "protein": 32,
+        "fat": 13,
+        "fiber": 6,
+        "calcium": 90,
+        "iron": 2.2,
+        "potassium": 520,
+        "sodium": 420,
+        "vitamin_a": 200,
+        "vitamin_c": 30,
+        "vitamin_d": 0.2
     },
 
     "소고기 덮밥": {
-        "group": "소고기", "style": "다양",
-        "kcal": 470, "carbs": 62, "protein": 27,
-        "fat": 13, "fiber": 4, "calcium": 45,
-        "iron": 3.5, "potassium": 430, "sodium": 480,
-        "vitamin_a": 25, "vitamin_c": 12, "vitamin_d": 0.2
+        "group": "소고기",
+        "style": "다양",
+        "kcal": 470,
+        "carbs": 62,
+        "protein": 27,
+        "fat": 13,
+        "fiber": 4,
+        "calcium": 45,
+        "iron": 3.5,
+        "potassium": 430,
+        "sodium": 480,
+        "vitamin_a": 25,
+        "vitamin_c": 12,
+        "vitamin_d": 0.2
     },
 
     "돼지고기 덮밥": {
-        "group": "돼지고기", "style": "다양",
-        "kcal": 460, "carbs": 63, "protein": 25,
-        "fat": 12, "fiber": 4, "calcium": 40,
-        "iron": 2.2, "potassium": 420, "sodium": 500,
-        "vitamin_a": 25, "vitamin_c": 10, "vitamin_d": 0.4
+        "group": "돼지고기",
+        "style": "다양",
+        "kcal": 460,
+        "carbs": 63,
+        "protein": 25,
+        "fat": 12,
+        "fiber": 4,
+        "calcium": 40,
+        "iron": 2.2,
+        "potassium": 420,
+        "sodium": 500,
+        "vitamin_a": 25,
+        "vitamin_c": 10,
+        "vitamin_d": 0.4
     },
 
     "두부 채소덮밥": {
-        "group": "두부", "style": "다양",
-        "kcal": 420, "carbs": 62, "protein": 19,
-        "fat": 11, "fiber": 7, "calcium": 180,
-        "iron": 3.0, "potassium": 560, "sodium": 400,
-        "vitamin_a": 200, "vitamin_c": 25, "vitamin_d": 0
+        "group": "두부",
+        "style": "다양",
+        "kcal": 420,
+        "carbs": 62,
+        "protein": 19,
+        "fat": 11,
+        "fiber": 7,
+        "calcium": 180,
+        "iron": 3.0,
+        "potassium": 560,
+        "sodium": 400,
+        "vitamin_a": 180,
+        "vitamin_c": 35,
+        "vitamin_d": 0.1
     }
 }
 
+
 # ==================================================
-# 음식 추천 함수
+# 사용자 입력 조건 처리
 # ==================================================
+
+def split_terms(terms):
+    """검색어 목록을 정리하고 중복을 제거한다."""
+    result = []
+
+    for term in terms:
+        term = str(term).strip()
+
+        if term and term not in result:
+            result.append(term)
+
+    return result
+
 
 def matches_food(food_name, info, terms):
     """
-    음식 이름과 음식 그룹을 기준으로 검색어가 포함되는지 확인한다.
-    주의: 실제 재료 전체가 아니라 메뉴 이름과 그룹만 확인한다.
+    메뉴 이름과 음식 그룹에 검색어가 포함되는지 확인한다.
+    실제 메뉴의 모든 재료를 분석하는 함수는 아니다.
     """
     name = str(food_name).casefold()
     group = str(info.get("group", "")).casefold()
 
     for term in terms:
-        term = term.strip().casefold()
-        if term and (term in name or term in group):
+        term = str(term).strip().casefold()
+
+        if not term:
+            continue
+
+        if term in name or term in group:
             return True
 
     return False
 
 
 def get_food_candidates(style, excluded):
-    """식단 스타일과 제외 음식 조건에 맞는 메뉴 목록을 반환한다."""
+    """식단 유형과 제외 음식 조건에 맞는 메뉴를 반환한다."""
+
     candidates = []
 
     for name, info in foods.items():
         food_style = info.get("style", "다양")
 
-        # 식단 스타일 적용
-        if style == "한식 위주" and food_style not in ["한식", "다양"]:
-            continue
+        if style == "한식 위주":
+            if food_style not in ["한식", "다양"]:
+                continue
 
-        if style == "간편식 위주" and food_style not in ["간편식", "다양"]:
-            continue
+        elif style == "간편식 위주":
+            if food_style not in ["간편식", "다양"]:
+                continue
 
-        # 제외 음식 적용
         if matches_food(name, info, excluded):
             continue
 
@@ -488,6 +707,10 @@ def get_food_candidates(style, excluded):
     return candidates
 
 
+# ==================================================
+# 30일 식단 생성 함수
+# ==================================================
+
 def generate_monthly_plan(
     style,
     preference,
@@ -495,45 +718,55 @@ def generate_monthly_plan(
     meal_count,
     seed=None
 ):
-    """조건에 따라 30일 식단을 생성한다."""
+    """설정한 조건에 따라 30일 식단을 생성한다."""
 
     if seed is not None:
-        random.seed(seed)
+        rng = random.Random(seed)
+    else:
+        rng = random.Random()
 
-    candidates = get_food_candidates(style, excluded)
+    preference = split_terms(preference)
+    excluded = split_terms(excluded)
+
+    candidates = get_food_candidates(
+        style,
+        excluded
+    )
 
     if not candidates:
         return None
 
-    # 하루 식사 횟수에 따라 식단 구성
+    preferred_candidates = [
+        name
+        for name in candidates
+        if matches_food(
+            name,
+            foods[name],
+            preference
+        )
+    ]
+
     if meal_count == "하루 세 끼":
         meal_names = ["아침", "점심", "저녁"]
     else:
         meal_names = ["아침", "점심", "저녁", "간식"]
 
-    # 선호 조건에 맞는 메뉴 목록
-    preferred_candidates = [
-        name
-        for name in candidates
-        if matches_food(name, foods[name], preference)
-    ]
-
-    monthly_plan = []
-    recent_foods = []
+    plan = []
+    recent_meals = []
 
     for day in range(1, 31):
         day_plan = {"일차": day}
         used_today = set()
 
-        for meal in meal_names:
-            # 최근에 자주 나온 메뉴는 가능한 한 피한다.
+        for meal_name in meal_names:
+
             available = [
                 name
                 for name in candidates
-                if name not in recent_foods and name not in used_today
+                if name not in recent_meals
+                and name not in used_today
             ]
 
-            # 후보가 부족하면 최근 메뉴 제한을 완화한다.
             if not available:
                 available = [
                     name
@@ -541,87 +774,111 @@ def generate_monthly_plan(
                     if name not in used_today
                 ]
 
-            # 하루 메뉴 수보다 후보가 적은 경우 중복을 허용한다.
             if not available:
                 available = candidates.copy()
 
-            # 선호 메뉴가 후보에 있다면 높은 확률로 선택한다.
             available_preferred = [
-                name for name in available
+                name
+                for name in available
                 if name in preferred_candidates
             ]
 
-            if available_preferred and random.random() < 0.7:
-                selected_food = random.choice(available_preferred)
+            if (
+                available_preferred
+                and rng.random() < 0.7
+            ):
+                chosen = rng.choice(
+                    available_preferred
+                )
             else:
-                selected_food = random.choice(available)
+                chosen = rng.choice(available)
 
-            day_plan[meal] = selected_food
-            used_today.add(selected_food)
+            day_plan[meal_name] = chosen
+            used_today.add(chosen)
 
-            recent_foods.append(selected_food)
+            recent_meals.append(chosen)
 
-            # 최근 메뉴 기록을 제한해 반복을 줄인다.
-            if len(recent_foods) > 6:
-                recent_foods.pop(0)
+            if len(recent_meals) > 12:
+                recent_meals.pop(0)
 
-        monthly_plan.append(day_plan)
+        plan.append(day_plan)
 
-    return monthly_plan
+    return plan
 
 
 # ==================================================
-# 30일 식단 생성
+# 식단 생성 버튼
 # ==================================================
 
-st.markdown("---")
-st.subheader("📅 나만의 30일 식단")
+st.divider()
+st.markdown("### 📅 30일 식단표 만들기")
 
 st.write(
-    "설정한 식단 스타일과 선호 음식, 제외 음식을 반영해 "
-    "30일 식단을 생성할 수 있어요."
+    "설정한 조건에 맞춰 30일 메뉴를 자동으로 구성해요. "
+    "생성된 식단은 날짜별로 확인하고 다시 추천받을 수 있어요."
 )
 
-if st.button("✨ 30일 식단 생성", use_container_width=True):
+if st.button(
+    "✨ 나만의 한 달 식단 생성하기",
+    use_container_width=True
+):
+
+    # 실제 위젯에서 정의한 변수명을 사용한다.
     new_plan = generate_monthly_plan(
-        style=selected_style,
+        style=meal_style,
         preference=all_preferences,
         excluded=all_excluded,
-        meal_count=selected_meal_count
+        meal_count=meal_count,
+        seed=None
     )
 
     if new_plan is None:
         st.error(
-            "현재 설정으로 추천할 수 있는 메뉴가 없어요. "
-            "제외 음식이나 식단 스타일을 변경해 주세요."
+            "현재 제외 조건에 맞는 음식이 없어요. "
+            "제외할 음식 설정을 조정해 주세요."
         )
+
     else:
         st.session_state["monthly_plan"] = new_plan
+
         st.session_state["monthly_plan_settings"] = {
-            "style": selected_style,
+            "style": meal_style,
             "preference": all_preferences.copy(),
             "excluded": all_excluded.copy(),
-            "meal_count": selected_meal_count,
-            "goal": selected_goal,
+            "meal_count": meal_count,
+            "goal": goal,
             "energy": daily_energy
         }
-        st.success("30일 식단을 생성했어요!")
+
+        st.session_state.pop(
+            "selected_day",
+            None
+        )
+
+        st.success("30일 식단표를 생성했어요!")
 
 
 # ==================================================
 # 생성된 식단 표시
 # ==================================================
 
-if st.session_state.get("monthly_plan"):
-    monthly_plan = st.session_state["monthly_plan"]
-    plan_settings = st.session_state.get(
-        "monthly_plan_settings", {}
+if "monthly_plan" in st.session_state:
+
+    plan = st.session_state["monthly_plan"]
+
+    st.divider()
+    st.markdown("### 🗓️ 나의 30일 식단표")
+
+    st.caption(
+        "식단은 입력 조건에 맞춰 자동으로 구성한 예시예요. "
+        "실제 영양 성분을 검증한 전문 식단 처방은 아니에요."
     )
 
-    st.markdown("### 🍽️ 생성된 식단")
-
+    # --------------------------------------------------
     # CSV 다운로드
-    plan_df = pd.DataFrame(monthly_plan)
+    # --------------------------------------------------
+
+    plan_df = pd.DataFrame(plan)
 
     csv_data = plan_df.to_csv(
         index=False,
@@ -636,34 +893,46 @@ if st.session_state.get("monthly_plan"):
         use_container_width=True
     )
 
-    # 확인할 날짜 선택
+    # --------------------------------------------------
+    # 날짜 선택
+    # --------------------------------------------------
+
     selected_day = st.selectbox(
         "확인할 날짜를 선택하세요.",
-        options=list(range(1, len(monthly_plan) + 1)),
+        options=list(range(1, 31)),
         format_func=lambda day: f"{day}일차",
         key="selected_day"
     )
 
-    selected_day_plan = monthly_plan[selected_day - 1]
+    selected_day_plan = plan[selected_day - 1]
 
-    st.markdown(f"#### 🗓️ {selected_day}일차 식단")
+    st.markdown(
+        f"#### 🍽️ {selected_day}일차 식단"
+    )
 
     meal_columns = [
-        meal for meal in selected_day_plan
+        meal
+        for meal in selected_day_plan.keys()
         if meal != "일차"
     ]
 
-    # 식사별 메뉴 카드
     columns = st.columns(len(meal_columns))
 
     for column, meal in zip(columns, meal_columns):
         with column:
-            st.markdown(f"**{meal}**")
-            st.info(selected_day_plan[meal])
+            st.markdown(
+                f"""
+                <div class="meal-card">
+                    <h4>{meal}</h4>
+                    <p>{selected_day_plan[meal]}</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-    # ==================================================
-    # 선택한 날짜 식단 다시 추천
-    # ==================================================
+    # --------------------------------------------------
+    # 선택 날짜 식단 다시 추천
+    # --------------------------------------------------
 
     st.markdown("### 🔄 오늘의 식단 다시 추천")
 
@@ -671,34 +940,44 @@ if st.session_state.get("monthly_plan"):
         "다른 메뉴로 다시 추천하기",
         use_container_width=True
     ):
-        current_settings = st.session_state.get(
-            "monthly_plan_settings", {}
+
+        settings = st.session_state.get(
+            "monthly_plan_settings",
+            {}
         )
 
-        current_style = current_settings.get(
-            "style", selected_style
-        )
-        current_preference = current_settings.get(
-            "preference", all_preferences
-        )
-        current_excluded = current_settings.get(
-            "excluded", all_excluded
+        current_style = settings.get(
+            "style",
+            meal_style
         )
 
-        new_candidates = get_food_candidates(
+        current_preference = settings.get(
+            "preference",
+            all_preferences
+        )
+
+        current_excluded = settings.get(
+            "excluded",
+            all_excluded
+        )
+
+        candidates = get_food_candidates(
             current_style,
             current_excluded
         )
 
-        if not new_candidates:
+        if not candidates:
             st.error(
                 "현재 설정으로 추천할 수 있는 메뉴가 없어요. "
                 "제외 조건을 변경해 주세요."
             )
+
         else:
+            rng = random.Random()
+
             preferred_candidates = [
                 name
-                for name in new_candidates
+                for name in candidates
                 if matches_food(
                     name,
                     foods[name],
@@ -706,29 +985,32 @@ if st.session_state.get("monthly_plan"):
                 )
             ]
 
-            new_day_plan = {"일차": selected_day}
+            new_day_plan = {
+                "일차": selected_day
+            }
+
             used_today = set()
 
             for meal in meal_columns:
-                # 기존 메뉴와 이미 선택한 메뉴를 우선 제외한다.
+
+                old_food = selected_day_plan.get(meal)
+
                 available = [
                     name
-                    for name in new_candidates
-                    if name != selected_day_plan.get(meal)
+                    for name in candidates
+                    if name != old_food
                     and name not in used_today
                 ]
 
-                # 메뉴 수가 부족하면 기존 메뉴 제외 조건을 완화한다.
                 if not available:
                     available = [
                         name
-                        for name in new_candidates
+                        for name in candidates
                         if name not in used_today
                     ]
 
-                # 후보가 적은 경우 중복을 허용한다.
                 if not available:
-                    available = new_candidates.copy()
+                    available = candidates.copy()
 
                 available_preferred = [
                     name
@@ -736,34 +1018,39 @@ if st.session_state.get("monthly_plan"):
                     if name in preferred_candidates
                 ]
 
-                if available_preferred and random.random() < 0.7:
-                    selected_food = random.choice(
+                if (
+                    available_preferred
+                    and rng.random() < 0.7
+                ):
+                    selected_food = rng.choice(
                         available_preferred
                     )
                 else:
-                    selected_food = random.choice(available)
+                    selected_food = rng.choice(
+                        available
+                    )
 
                 new_day_plan[meal] = selected_food
                 used_today.add(selected_food)
 
-            # 선택한 날짜의 식단만 변경한다.
-            monthly_plan[selected_day - 1] = new_day_plan
-            st.session_state["monthly_plan"] = monthly_plan
+            # 해당 날짜의 메뉴만 갱신한다.
+            plan[selected_day - 1] = new_day_plan
 
-            st.success(
-                f"{selected_day}일차 식단을 새롭게 추천했어요!"
-            )
+            st.session_state["monthly_plan"] = plan
+
             st.rerun()
 
-    # ==================================================
+    # --------------------------------------------------
     # 전체 식단표
-    # ==================================================
+    # --------------------------------------------------
 
-    st.markdown("---")
+    st.divider()
     st.markdown("### 📋 30일 전체 식단표")
 
     st.dataframe(
-        pd.DataFrame(st.session_state["monthly_plan"]),
+        pd.DataFrame(
+            st.session_state["monthly_plan"]
+        ),
         use_container_width=True,
         hide_index=True
     )
@@ -773,6 +1060,7 @@ if st.session_state.get("monthly_plan"):
     # ==================================================
 
     def calculate_nutrients(day_plan):
+
         nutrient_keys = [
             "kcal",
             "carbs",
@@ -789,14 +1077,19 @@ if st.session_state.get("monthly_plan"):
         ]
 
         totals = {
-            key: 0.0 for key in nutrient_keys
+            key: 0.0
+            for key in nutrient_keys
         }
 
-        for meal, food_name in day_plan.items():
-            if meal == "일차":
+        for meal_name, food_name in day_plan.items():
+
+            if meal_name == "일차":
                 continue
 
-            food_info = foods.get(food_name, {})
+            food_info = foods.get(
+                food_name,
+                {}
+            )
 
             for key in nutrient_keys:
                 totals[key] += float(
@@ -806,19 +1099,23 @@ if st.session_state.get("monthly_plan"):
         return totals
 
     # ==================================================
-    # 선택 날짜의 영양 정보
+    # 선택 날짜 영양 정보
     # ==================================================
 
-    st.markdown("---")
+    st.divider()
+
     st.markdown(
         f"### 🧪 {selected_day}일차 영양 정보"
     )
 
+    # 다시 추천한 경우에도 최신 식단을 사용한다.
     selected_day_plan = st.session_state[
         "monthly_plan"
     ][selected_day - 1]
 
-    nutrients = calculate_nutrients(selected_day_plan)
+    nutrients = calculate_nutrients(
+        selected_day_plan
+    )
 
     metric1, metric2, metric3, metric4 = st.columns(4)
 
@@ -842,11 +1139,13 @@ if st.session_state.get("monthly_plan"):
         f"{nutrients['fat']:.1f} g"
     )
 
-    # ==================================================
-    # 탄수화물·단백질·지방 비율
-    # ==================================================
+    # --------------------------------------------------
+    # 주요 영양소 그래프
+    # --------------------------------------------------
 
-    st.markdown("#### 🥧 탄수화물 · 단백질 · 지방")
+    st.markdown(
+        "#### 🥧 탄수화물 · 단백질 · 지방"
+    )
 
     macro_df = pd.DataFrame({
         "영양소": [
@@ -866,6 +1165,7 @@ if st.session_state.get("monthly_plan"):
     ]
 
     if not macro_df.empty:
+
         fig_macro = px.pie(
             macro_df,
             names="영양소",
@@ -881,15 +1181,17 @@ if st.session_state.get("monthly_plan"):
 
         st.plotly_chart(
             fig_macro,
-            use_container_width=True,
-            key="macro_pie_chart"
+            use_container_width=True
         )
-    else:
-        st.info("표시할 영양소 데이터가 없어요.")
 
-    # ==================================================
-    # 기타 영양소 정보
-    # ==================================================
+    else:
+        st.info(
+            "표시할 영양소 데이터가 없어요."
+        )
+
+    # --------------------------------------------------
+    # 기타 영양소
+    # --------------------------------------------------
 
     st.markdown("#### 🥦 기타 영양소")
 
@@ -904,13 +1206,14 @@ if st.session_state.get("monthly_plan"):
             "비타민 C",
             "비타민 D"
         ],
+
         "함량": [
             f"{nutrients['fiber']:.1f} g",
             f"{nutrients['calcium']:.1f} mg",
             f"{nutrients['iron']:.1f} mg",
             f"{nutrients['potassium']:.1f} mg",
             f"{nutrients['sodium']:.1f} mg",
-            f"{nutrients['vitamin_a']:.1f} μg",
+            f"{nutrients['vitamin_a']:.1f} μg RAE",
             f"{nutrients['vitamin_c']:.1f} mg",
             f"{nutrients['vitamin_d']:.1f} μg"
         ]
@@ -926,22 +1229,29 @@ if st.session_state.get("monthly_plan"):
     # 30일 에너지 추이
     # ==================================================
 
-    st.markdown("---")
+    st.divider()
     st.markdown("### 📈 30일 에너지 추이")
 
     energy_records = []
 
     for day_plan in st.session_state["monthly_plan"]:
-        day_nutrients = calculate_nutrients(day_plan)
+
+        day_nutrients = calculate_nutrients(
+            day_plan
+        )
 
         energy_records.append({
             "일차": day_plan["일차"],
             "에너지(kcal)": day_nutrients["kcal"]
         })
 
-    energy_df = pd.DataFrame(energy_records)
+    energy_df = pd.DataFrame(
+        energy_records
+    )
 
-    average_energy = energy_df["에너지(kcal)"].mean()
+    average_energy = energy_df[
+        "에너지(kcal)"
+    ].mean()
 
     st.metric(
         "30일 식단의 하루 평균 에너지",
@@ -953,33 +1263,31 @@ if st.session_state.get("monthly_plan"):
         x="일차",
         y="에너지(kcal)",
         markers=True,
-        title="날짜별 식단 에너지"
+        title="날짜별 예시 식단 에너지"
     )
 
     fig_energy.update_layout(
-        xaxis_title="일차",
+        xaxis_title="날짜",
         yaxis_title="에너지(kcal)"
     )
 
     st.plotly_chart(
         fig_energy,
-        use_container_width=True,
-        key="energy_trend_chart"
+        use_container_width=True
     )
 
     # ==================================================
-    # 안내 문구
+    # 안내
     # ==================================================
 
-    st.caption(
-        "영양 정보는 메뉴별로 설정된 참고용 수치이며, "
-        "실제 조리 방법과 재료의 양에 따라 달라질 수 있어요. "
-        "현재 식단 생성 기능은 메뉴를 추천하는 기능으로, "
-        "개인의 영양 필요량에 맞춰 음식의 양을 자동 조절하지는 않아요."
-    )
+    st.divider()
 
-    st.caption(
-        "알레르기가 있는 경우에는 메뉴 이름만으로 안전 여부를 "
-        "판단하지 말고, 실제 재료와 제품의 알레르기 표시를 "
-        "반드시 확인해 주세요."
-    )
+    st.markdown("### 💡 알아두기")
+
+    st.markdown("""
+    - 식단은 입력한 선호도와 제외 조건을 반영해 구성한 예시예요.
+    - 현재 버전은 메뉴를 자동 조합하지만, 목표 에너지에 맞춰 음식의 분량을 최적화하지는 않아요.
+    - 영양 성분은 예시 데이터이므로 실제 음식의 중량과 조리법에 따라 달라질 수 있어요.
+    - 비타민과 무기질은 에너지를 직접 제공하지 않으므로 탄수화물·단백질·지방의 에너지 비율과 별도로 표시해요.
+    - 개인에게 적합한 식단은 성장 상태, 건강 상태, 활동량 등 다양한 요인에 따라 달라질 수 있어요.
+    """)
