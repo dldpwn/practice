@@ -645,6 +645,124 @@ foods = {
     }
 }
 
+# ==================================================
+# 간식 전용 메뉴
+# ==================================================
+
+snacks = {
+    "사과": {
+        "group": "과일",
+        "style": "간편식",
+        "kcal": 95,
+        "carbs": 25,
+        "protein": 0.5,
+        "fat": 0.3,
+        "fiber": 4,
+        "calcium": 10,
+        "iron": 0.2,
+        "potassium": 195,
+        "sodium": 2,
+        "vitamin_a": 5,
+        "vitamin_c": 8,
+        "vitamin_d": 0
+    },
+    "바나나": {
+        "group": "과일",
+        "style": "간편식",
+        "kcal": 105,
+        "carbs": 27,
+        "protein": 1.3,
+        "fat": 0.4,
+        "fiber": 3.1,
+        "calcium": 6,
+        "iron": 0.3,
+        "potassium": 420,
+        "sodium": 1,
+        "vitamin_a": 4,
+        "vitamin_c": 10,
+        "vitamin_d": 0
+    },
+    "제철 과일": {
+        "group": "과일",
+        "style": "간편식",
+        "kcal": 80,
+        "carbs": 20,
+        "protein": 1,
+        "fat": 0.3,
+        "fiber": 2.5,
+        "calcium": 15,
+        "iron": 0.3,
+        "potassium": 200,
+        "sodium": 2,
+        "vitamin_a": 30,
+        "vitamin_c": 30,
+        "vitamin_d": 0
+    },
+    "견과류": {
+        "group": "견과류",
+        "style": "간편식",
+        "kcal": 170,
+        "carbs": 6,
+        "protein": 5,
+        "fat": 15,
+        "fiber": 3,
+        "calcium": 40,
+        "iron": 1.2,
+        "potassium": 180,
+        "sodium": 2,
+        "vitamin_a": 0,
+        "vitamin_c": 0,
+        "vitamin_d": 0
+    },
+    "플레인 요구르트": {
+        "group": "우유",
+        "style": "간편식",
+        "kcal": 120,
+        "carbs": 12,
+        "protein": 6,
+        "fat": 5,
+        "fiber": 0,
+        "calcium": 200,
+        "iron": 0.1,
+        "potassium": 240,
+        "sodium": 80,
+        "vitamin_a": 50,
+        "vitamin_c": 1,
+        "vitamin_d": 0.5
+    },
+    "찐 고구마": {
+        "group": "고구마",
+        "style": "간편식",
+        "kcal": 130,
+        "carbs": 30,
+        "protein": 2,
+        "fat": 0.2,
+        "fiber": 4,
+        "calcium": 30,
+        "iron": 0.6,
+        "potassium": 450,
+        "sodium": 40,
+        "vitamin_a": 700,
+        "vitamin_c": 15,
+        "vitamin_d": 0
+    },
+    "치즈": {
+        "group": "우유",
+        "style": "간편식",
+        "kcal": 80,
+        "carbs": 1,
+        "protein": 5,
+        "fat": 6,
+        "fiber": 0,
+        "calcium": 150,
+        "iron": 0.1,
+        "potassium": 25,
+        "sodium": 180,
+        "vitamin_a": 60,
+        "vitamin_c": 0,
+        "vitamin_d": 0.2
+    }
+}
 
 # ==================================================
 # 사용자 입력 조건 처리
@@ -710,7 +828,6 @@ def get_food_candidates(style, excluded):
 # ==================================================
 # 30일 식단 생성 함수
 # ==================================================
-
 def generate_monthly_plan(
     style,
     preference,
@@ -718,77 +835,89 @@ def generate_monthly_plan(
     meal_count,
     seed=None
 ):
-    """설정한 조건에 따라 30일 식단을 생성한다."""
+    """30일 식단을 생성하며 간식은 간식 전용 메뉴에서 선택한다."""
 
-    if seed is not None:
-        rng = random.Random(seed)
-    else:
-        rng = random.Random()
-
-    preference = split_terms(preference)
-    excluded = split_terms(excluded)
+    rng = random.Random(seed)
 
     candidates = get_food_candidates(
         style,
         excluded
     )
 
+    snack_candidates = [
+        name
+        for name, info in snacks.items()
+        if not matches_food(name, info, excluded)
+    ]
+
     if not candidates:
         return None
 
-    preferred_candidates = [
-        name
-        for name in candidates
-        if matches_food(
-            name,
-            foods[name],
-            preference
-        )
-    ]
+    if (
+        meal_count == "세 끼 + 간식"
+        and not snack_candidates
+    ):
+        return None
 
-    if meal_count == "하루 세 끼":
-        meal_names = ["아침", "점심", "저녁"]
-    else:
-        meal_names = ["아침", "점심", "저녁", "간식"]
+    meal_names = ["아침", "점심", "저녁"]
+
+    if meal_count == "세 끼 + 간식":
+        meal_names.append("간식")
 
     plan = []
     recent_meals = []
 
     for day in range(1, 31):
-        day_plan = {"일차": day}
+
+        day_plan = {
+            "일차": day
+        }
+
         used_today = set()
 
         for meal_name in meal_names:
 
+            # 간식은 간식 전용 메뉴에서 선택
+            if meal_name == "간식":
+                current_candidates = snack_candidates
+                current_foods = snacks
+            else:
+                current_candidates = candidates
+                current_foods = foods
+
             available = [
                 name
-                for name in candidates
-                if name not in recent_meals
+                for name in current_candidates
+                if name not in recent_meals[-6:]
                 and name not in used_today
             ]
 
             if not available:
                 available = [
                     name
-                    for name in candidates
+                    for name in current_candidates
                     if name not in used_today
                 ]
 
             if not available:
-                available = candidates.copy()
+                available = current_candidates.copy()
 
-            available_preferred = [
+            preferred_available = [
                 name
                 for name in available
-                if name in preferred_candidates
+                if matches_food(
+                    name,
+                    current_foods[name],
+                    preference
+                )
             ]
 
             if (
-                available_preferred
+                preferred_available
                 and rng.random() < 0.7
             ):
                 chosen = rng.choice(
-                    available_preferred
+                    preferred_available
                 )
             else:
                 chosen = rng.choice(available)
@@ -796,14 +925,17 @@ def generate_monthly_plan(
             day_plan[meal_name] = chosen
             used_today.add(chosen)
 
-            recent_meals.append(chosen)
+            # 간식과 식사 메뉴의 최근 기록을 별도로 관리
+            if meal_name != "간식":
+                recent_meals.append(chosen)
 
-            if len(recent_meals) > 12:
-                recent_meals.pop(0)
+                if len(recent_meals) > 12:
+                    recent_meals.pop(0)
 
         plan.append(day_plan)
 
     return plan
+
 
 
 # ==================================================
