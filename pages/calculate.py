@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -10,53 +11,222 @@ import random
 st.set_page_config(
     page_title="한 달 맞춤 식단 | NutriDay",
     page_icon="🥗",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # ==================================================
-# Streamlit 기본 페이지 메뉴 숨기기
+# 디자인 - 메인 페이지와 통일
 # ==================================================
 
 st.markdown("""
 <style>
-    [data-testid="stSidebarNav"] {
-        display: none;
+    @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+
+    :root {
+        --cream: #FBF9F1;
+        --mint: #EEF6EF;
+        --card: #F0F7F0;
+        --green: #4D9274;
+        --green-dark: #377D61;
+        --text: #263B32;
+        --muted: #718078;
+        --border: #DCE8DD;
     }
-</style>
-""", unsafe_allow_html=True)
 
-# ==================================================
-# 디자인
-# ==================================================
-
-st.markdown("""
-<style>
-    html, body, p, label,
+    html, body, [class*="css"],
+    p, label, input, textarea, button,
     h1, h2, h3, h4, h5, h6,
-    .stMarkdown,
+    .stMarkdown, .stText,
     [data-testid="stMetricValue"],
-    [data-testid="stMetricLabel"] {
+    [data-testid="stMetricLabel"],
+    [data-testid="stCaptionContainer"] {
         font-family: 'Gowun Dodum', sans-serif !important;
     }
 
+    .stApp {
+        background-color: var(--cream);
+        color: var(--text);
+    }
+
+    [data-testid="stHeader"] {
+        background-color: rgba(251, 249, 241, 0.92);
+    }
+
+    .block-container {
+        max-width: 1100px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* 제목 */
     .main-title {
         font-size: 2rem;
         font-weight: 700;
-        color: #377D61;
+        color: var(--green-dark);
         margin-bottom: 0.3rem;
     }
 
     .sub-text {
-        color: #777777;
+        color: var(--muted);
         font-size: 1rem;
+        line-height: 1.7;
         margin-bottom: 1.5rem;
     }
 
+    h1, h2, h3, h4 {
+        color: var(--green-dark);
+    }
+
+    /* 사이드바 */
+    [data-testid="stSidebar"] {
+        background-color: var(--mint);
+        border-right: 1px solid var(--border);
+    }
+
+    [data-testid="stSidebar"] h2 {
+        color: var(--green-dark);
+    }
+
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        color: var(--text);
+    }
+
+    [data-testid="stSidebarNav"] {
+        display: none;
+    }
+
+    /* 식단 카드 */
     .meal-card {
-        background-color: #F1F8F3;
-        padding: 16px;
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        padding: 1.1rem;
+        border-radius: 16px;
+        margin-bottom: 0.7rem;
+        min-height: 110px;
+        box-shadow: 0 2px 8px rgba(38, 59, 50, 0.035);
+    }
+
+    .meal-card h4 {
+        color: var(--green-dark);
+        font-size: 1rem;
+        margin-top: 0;
+        margin-bottom: 0.7rem;
+    }
+
+    .meal-card p {
+        color: var(--text);
+        font-size: 0.98rem;
+        margin-bottom: 0;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    /* 버튼 */
+    .stButton > button,
+    .stDownloadButton > button {
+        background-color: var(--green);
+        color: white;
+        border: 1px solid var(--green);
         border-radius: 12px;
-        margin-bottom: 10px;
+        min-height: 2.8rem;
+        font-family: 'Gowun Dodum', sans-serif !important;
+        font-weight: 600;
+        transition: background-color 0.2s ease,
+                    border-color 0.2s ease;
+    }
+
+    .stButton > button:hover,
+    .stDownloadButton > button:hover {
+        background-color: var(--green-dark);
+        border-color: var(--green-dark);
+        color: white;
+    }
+
+    .stButton > button:focus,
+    .stDownloadButton > button:focus {
+        box-shadow: 0 0 0 2px var(--border);
+        color: white;
+    }
+
+    /* 입력창 및 선택창 */
+    [data-baseweb="select"] > div,
+    [data-baseweb="input"] > div,
+    [data-baseweb="textarea"] > div {
+        border-radius: 10px;
+        border-color: var(--border);
+        background-color: #FFFFFF;
+    }
+
+    [data-baseweb="select"] > div:focus-within,
+    [data-baseweb="input"] > div:focus-within,
+    [data-baseweb="textarea"] > div:focus-within {
+        border-color: var(--green);
+    }
+
+    div[data-testid="stNumberInput"] button {
+        color: var(--green-dark);
+    }
+
+    /* 라디오 버튼 및 체크 요소 */
+    [data-testid="stRadio"] label,
+    [data-testid="stCheckbox"] label {
+        color: var(--text);
+    }
+
+    /* 지표 카드 */
+    [data-testid="stMetric"] {
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1rem;
+    }
+
+    [data-testid="stMetricLabel"] {
+        color: var(--muted);
+    }
+
+    [data-testid="stMetricValue"] {
+        color: var(--green-dark);
+    }
+
+    /* 안내 박스 */
+    [data-testid="stAlert"] {
+        border-radius: 12px;
+    }
+
+    /* 구분선 */
+    hr {
+        border-color: var(--border);
+    }
+
+    /* 표 */
+    [data-testid="stDataFrame"] {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    /* 그래프 배경 */
+    [data-testid="stPlotlyChart"] {
+        background-color: transparent;
+        border-radius: 14px;
+    }
+
+    /* 작은 화면에서도 제목이 잘 보이도록 설정 */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: 1.2rem;
+            padding-bottom: 2rem;
+        }
+
+        .main-title {
+            font-size: 1.65rem;
+        }
+
+        .meal-card {
+            padding: 0.85rem;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -67,10 +237,20 @@ st.markdown("""
 # ==================================================
 
 with st.sidebar:
-    st.markdown("## 🥗 NutriDay")
+    st.markdown(
+        "<h2 style='color:#377D61;'>🥗 NutriDay</h2>",
+        unsafe_allow_html=True
+    )
+
     st.caption("나에게 맞는 하루 영양 관리")
 
-    st.page_link("main.py", label="🏠 메인 페이지")
+    st.markdown("---")
+
+    st.page_link(
+        "main.py",
+        label="🧪 기초대사량 & 영양 가이드"
+    )
+
     st.page_link(
         "pages/calculate.py",
         label="🥗 한 달 맞춤 식단"
@@ -425,9 +605,6 @@ foods = {
 # ==================================================
 # 간식 전용 메뉴
 # ==================================================
-# 일반 식사와 분리하여 간식에는 과일, 유제품,
-# 견과류 등의 메뉴만 추천하도록 한다.
-# ==================================================
 
 snacks = {
     "사과": food_info(
@@ -483,10 +660,7 @@ def matches_food(name, info, terms):
         if not term_lower:
             continue
 
-        if (
-            term_lower in name_lower
-            or term_lower in group_lower
-        ):
+        if term_lower in name_lower or term_lower in group_lower:
             return True
 
     return False
@@ -500,7 +674,6 @@ def get_food_candidates(style, excluded):
     candidates = []
 
     for name, info in foods.items():
-
         if matches_food(name, info, excluded):
             continue
 
@@ -546,16 +719,13 @@ def choose_food(
     """선호 메뉴를 우선 고려하면서 메뉴를 선택한다."""
 
     available = [
-        name
-        for name in candidates
-        if name not in used_today
-        and name != old_food
+        name for name in candidates
+        if name not in used_today and name != old_food
     ]
 
     if not available:
         available = [
-            name
-            for name in candidates
+            name for name in candidates
             if name != old_food
         ]
 
@@ -566,13 +736,8 @@ def choose_food(
         return None
 
     preferred = [
-        name
-        for name in available
-        if matches_food(
-            name,
-            food_data[name],
-            preferences
-        )
+        name for name in available
+        if matches_food(name, food_data[name], preferences)
     ]
 
     if preferred and rng.random() < 0.7:
@@ -594,22 +759,13 @@ def generate_monthly_plan(
 ):
     rng = random.Random(seed)
 
-    meal_candidates = get_food_candidates(
-        style,
-        excluded
-    )
-
-    snack_candidates = get_snack_candidates(
-        excluded
-    )
+    meal_candidates = get_food_candidates(style, excluded)
+    snack_candidates = get_snack_candidates(excluded)
 
     if not meal_candidates:
         return None
 
-    if (
-        meal_count == "세 끼 + 간식"
-        and not snack_candidates
-    ):
+    if meal_count == "세 끼 + 간식" and not snack_candidates:
         return None
 
     meal_names = ["아침", "점심", "저녁"]
@@ -626,7 +782,6 @@ def generate_monthly_plan(
         used_today = set()
 
         for meal_name in meal_names:
-
             if meal_name == "간식":
                 candidates = snack_candidates
                 food_data = snacks
@@ -636,7 +791,6 @@ def generate_monthly_plan(
                 food_data = foods
                 recent = recent_meals
 
-            # 최근에 먹은 메뉴는 가능한 한 피한다.
             fresh_candidates = [
                 name for name in candidates
                 if name not in recent[-6:]
@@ -696,26 +850,16 @@ def calculate_nutrients(day_plan):
         "vitamin_d"
     ]
 
-    totals = {
-        key: 0.0
-        for key in nutrient_keys
-    }
+    totals = {key: 0.0 for key in nutrient_keys}
 
     for meal_name, food_name in day_plan.items():
-
         if meal_name == "일차":
             continue
 
-        # 일반 식사와 간식 모두 검색한다.
-        info = foods.get(
-            food_name,
-            snacks.get(food_name, {})
-        )
+        info = foods.get(food_name, snacks.get(food_name, {}))
 
         for key in nutrient_keys:
-            totals[key] += float(
-                info.get(key, 0)
-            )
+            totals[key] += float(info.get(key, 0))
 
     return totals
 
@@ -734,9 +878,9 @@ st.write(
 
 if st.button(
     "✨ 나만의 한 달 식단 생성하기",
-    use_container_width=True
+    use_container_width=True,
+    key="generate_monthly_plan"
 ):
-
     new_plan = generate_monthly_plan(
         style=meal_style,
         preference=all_preferences,
@@ -749,7 +893,6 @@ if st.button(
             "현재 설정으로 추천할 수 있는 메뉴가 없어요. "
             "제외할 음식 설정을 확인해 주세요."
         )
-
     else:
         st.session_state["monthly_plan"] = new_plan
 
@@ -762,10 +905,7 @@ if st.button(
             "energy": daily_energy
         }
 
-        st.session_state.pop(
-            "selected_day",
-            None
-        )
+        st.session_state.pop("selected_day", None)
 
         st.success("30일 식단표를 생성했어요!")
 
@@ -775,7 +915,6 @@ if st.button(
 # ==================================================
 
 if "monthly_plan" in st.session_state:
-
     plan = st.session_state["monthly_plan"]
 
     st.divider()
@@ -786,15 +925,10 @@ if "monthly_plan" in st.session_state:
         "개인에게 필요한 영양량을 자동으로 처방하지는 않아요."
     )
 
-    # --------------------------------------------------
     # CSV 다운로드
-    # --------------------------------------------------
-
     plan_df = pd.DataFrame(plan)
 
-    csv_data = plan_df.to_csv(
-        index=False
-    ).encode("utf-8-sig")
+    csv_data = plan_df.to_csv(index=False).encode("utf-8-sig")
 
     st.download_button(
         label="📥 한 달 식단표 CSV 다운로드",
@@ -804,10 +938,7 @@ if "monthly_plan" in st.session_state:
         use_container_width=True
     )
 
-    # --------------------------------------------------
     # 날짜 선택
-    # --------------------------------------------------
-
     selected_day = st.selectbox(
         "자세히 확인할 날짜",
         options=list(range(1, 31)),
@@ -817,9 +948,7 @@ if "monthly_plan" in st.session_state:
 
     selected_meal = plan[selected_day - 1]
 
-    st.markdown(
-        f"#### 🍽️ {selected_day}일 차 식단"
-    )
+    st.markdown(f"#### 🍽️ {selected_day}일 차 식단")
 
     meal_names = [
         name for name in selected_meal
@@ -840,36 +969,24 @@ if "monthly_plan" in st.session_state:
                 unsafe_allow_html=True
             )
 
-    # --------------------------------------------------
     # 선택한 날짜 식단 다시 추천
-    # --------------------------------------------------
-
     st.markdown("### 🔄 오늘의 식단 다시 추천")
 
     if st.button(
         f"{selected_day}일 차 메뉴 다시 추천하기",
-        use_container_width=True
+        use_container_width=True,
+        key="regenerate_selected_day"
     ):
-
         settings = st.session_state.get(
             "monthly_plan_settings",
             {}
         )
 
-        style_for_plan = settings.get(
-            "style",
-            meal_style
-        )
-
+        style_for_plan = settings.get("style", meal_style)
         preferences_for_plan = settings.get(
-            "preference",
-            all_preferences
+            "preference", all_preferences
         )
-
-        excluded_for_plan = settings.get(
-            "excluded",
-            all_excluded
-        )
+        excluded_for_plan = settings.get("excluded", all_excluded)
 
         meal_candidates = get_food_candidates(
             style_for_plan,
@@ -886,10 +1003,7 @@ if "monthly_plan" in st.session_state:
                 "제외 조건을 확인해 주세요."
             )
 
-        elif (
-            "간식" in meal_names
-            and not snack_candidates
-        ):
+        elif "간식" in meal_names and not snack_candidates:
             st.error(
                 "추천할 수 있는 간식 메뉴가 없어요. "
                 "제외 조건을 확인해 주세요."
@@ -897,15 +1011,10 @@ if "monthly_plan" in st.session_state:
 
         else:
             rng = random.Random()
-
-            new_day_plan = {
-                "일차": selected_day
-            }
-
+            new_day_plan = {"일차": selected_day}
             used_today = set()
 
             for meal_name in meal_names:
-
                 if meal_name == "간식":
                     candidates = snack_candidates
                     food_data = snacks
@@ -929,117 +1038,76 @@ if "monthly_plan" in st.session_state:
                 used_today.add(new_food)
 
             plan[selected_day - 1] = new_day_plan
-
             st.session_state["monthly_plan"] = plan
 
             st.rerun()
 
-    # --------------------------------------------------
     # 전체 식단표
-    # --------------------------------------------------
-
     st.divider()
     st.markdown("### 📋 전체 식단표")
 
     st.dataframe(
-        pd.DataFrame(
-            st.session_state["monthly_plan"]
-        ),
+        pd.DataFrame(st.session_state["monthly_plan"]),
         hide_index=True,
         use_container_width=True
     )
 
-    # --------------------------------------------------
     # 선택한 날짜의 영양소 분석
-    # --------------------------------------------------
-
-    selected_meal = st.session_state[
-        "monthly_plan"
-    ][selected_day - 1]
-
-    nutrients = calculate_nutrients(
-        selected_meal
-    )
+    selected_meal = st.session_state["monthly_plan"][selected_day - 1]
+    nutrients = calculate_nutrients(selected_meal)
 
     st.divider()
-
-    st.markdown(
-        f"### 📊 {selected_day}일 차 영양소 분석"
-    )
+    st.markdown(f"### 📊 {selected_day}일 차 영양소 분석")
 
     metric1, metric2, metric3, metric4 = st.columns(4)
 
-    metric1.metric(
-        "에너지",
-        f"{nutrients['kcal']:,.0f} kcal"
-    )
+    metric1.metric("에너지", f"{nutrients['kcal']:,.0f} kcal")
+    metric2.metric("탄수화물", f"{nutrients['carbs']:.1f} g")
+    metric3.metric("단백질", f"{nutrients['protein']:.1f} g")
+    metric4.metric("지방", f"{nutrients['fat']:.1f} g")
 
-    metric2.metric(
-        "탄수화물",
-        f"{nutrients['carbs']:.1f} g"
-    )
-
-    metric3.metric(
-        "단백질",
-        f"{nutrients['protein']:.1f} g"
-    )
-
-    metric4.metric(
-        "지방",
-        f"{nutrients['fat']:.1f} g"
-    )
-
-    # --------------------------------------------------
     # 탄수화물·단백질·지방 에너지 비율
-    # --------------------------------------------------
-
     st.markdown("#### 🥧 주요 영양소 에너지 비율")
 
     carb_kcal = nutrients["carbs"] * 4
     protein_kcal = nutrients["protein"] * 4
     fat_kcal = nutrients["fat"] * 9
 
-    macro_total = (
-        carb_kcal
-        + protein_kcal
-        + fat_kcal
-    )
+    macro_total = carb_kcal + protein_kcal + fat_kcal
 
     if macro_total > 0:
-
         macro_df = pd.DataFrame({
-            "영양소": [
-                "탄수화물",
-                "단백질",
-                "지방"
-            ],
-            "에너지량(kcal)": [
-                carb_kcal,
-                protein_kcal,
-                fat_kcal
-            ]
+            "영양소": ["탄수화물", "단백질", "지방"],
+            "에너지량(kcal)": [carb_kcal, protein_kcal, fat_kcal]
         })
 
         fig_macro = px.pie(
             macro_df,
             names="영양소",
             values="에너지량(kcal)",
-            hole=0.55
+            hole=0.55,
+            color_discrete_sequence=[
+                "#78B89A",
+                "#A8CDB4",
+                "#D8B878"
+            ]
         )
 
         fig_macro.update_traces(
             texttemplate="%{label}<br>%{percent}",
-            textposition="inside"
+            textposition="inside",
+            insidetextfont=dict(color="#263B32", size=12)
         )
 
         fig_macro.update_layout(
-            margin=dict(
-                t=20,
-                b=20,
-                l=10,
-                r=10
-            ),
-            legend_title_text="영양소"
+            margin=dict(t=20, b=20, l=10, r=10),
+            legend_title_text="영양소",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(
+                family="Gowun Dodum, sans-serif",
+                color="#263B32"
+            )
         )
 
         st.plotly_chart(
@@ -1047,10 +1115,7 @@ if "monthly_plan" in st.session_state:
             use_container_width=True
         )
 
-    # --------------------------------------------------
     # 비타민·무기질·식이섬유
-    # --------------------------------------------------
-
     st.markdown("#### 🧬 비타민·무기질·식이섬유")
 
     nutrient_df = pd.DataFrame({
@@ -1082,20 +1147,14 @@ if "monthly_plan" in st.session_state:
         use_container_width=True
     )
 
-    # --------------------------------------------------
     # 30일 에너지 추이
-    # --------------------------------------------------
-
     st.divider()
     st.markdown("### 📈 30일 식단 요약")
 
     daily_rows = []
 
     for day_plan in st.session_state["monthly_plan"]:
-
-        day_nutrients = calculate_nutrients(
-            day_plan
-        )
+        day_nutrients = calculate_nutrients(day_plan)
 
         daily_rows.append({
             "일차": day_plan["일차"],
@@ -1108,9 +1167,7 @@ if "monthly_plan" in st.session_state:
 
     daily_df = pd.DataFrame(daily_rows)
 
-    average_energy = daily_df[
-        "에너지(kcal)"
-    ].mean()
+    average_energy = daily_df["에너지(kcal)"].mean()
 
     st.metric(
         "30일 식단의 하루 평균 에너지",
@@ -1128,12 +1185,37 @@ if "monthly_plan" in st.session_state:
         x="일차",
         y="에너지(kcal)",
         markers=True,
-        title="날짜별 예시 식단 에너지"
+        title="날짜별 예시 식단 에너지",
+        color_discrete_sequence=["#4D9274"]
+    )
+
+    fig_energy.update_traces(
+        line=dict(width=3),
+        marker=dict(size=7)
     )
 
     fig_energy.update_layout(
         xaxis_title="날짜",
-        yaxis_title="에너지(kcal)"
+        yaxis_title="에너지(kcal)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(
+            family="Gowun Dodum, sans-serif",
+            color="#263B32"
+        ),
+        title_font=dict(
+            family="Gowun Dodum, sans-serif",
+            color="#377D61"
+        ),
+        margin=dict(t=55, b=30, l=15, r=15),
+        xaxis=dict(
+            showgrid=False,
+            linecolor="#DCE8DD"
+        ),
+        yaxis=dict(
+            gridcolor="#E4ECE4",
+            zeroline=False
+        )
     )
 
     st.plotly_chart(
@@ -1141,10 +1223,7 @@ if "monthly_plan" in st.session_state:
         use_container_width=True
     )
 
-    # --------------------------------------------------
     # 안내
-    # --------------------------------------------------
-
     st.divider()
     st.markdown("### 💡 알아두기")
 
