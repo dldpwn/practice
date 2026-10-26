@@ -104,10 +104,6 @@ with st.sidebar:
 # 기초대사량 추정 함수
 # =========================================================
 def estimate_bmr(age, sex, height_cm, weight_kg):
-    """
-    연령대에 따라 기초대사량 추정식을 선택한다.
-    계산 결과는 직접 측정한 값이 아닌 추정값이다.
-    """
 
     if age < 3:
         return None, None
@@ -179,15 +175,6 @@ def estimate_activity_level(
     exercise_intensity,
     daily_movement,
 ):
-    """
-    걷기 시간, 운동 빈도, 운동 강도, 일상 활동을 점수화한다.
-
-    이 점수표는 교육용 간이 분류 규칙이며,
-    검증된 임상 평가 도구는 아니다.
-
-    운동 열량을 별도로 더하지 않고,
-    점수로 추정한 활동 수준을 EER 계산식에 전달한다.
-    """
 
     walking_points = {
         "30분 미만": 0,
