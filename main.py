@@ -1,4 +1,4 @@
-
+import hashlib
 import streamlit as st
 
 # =========================================================
@@ -82,11 +82,189 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
+# =========================================================
+# 시연용 로그인 / 회원가입
+# 계정은 현재 세션에만 저장됨
+# =========================================================
+if "demo_users" not in st.session_state:
+    st.session_state["demo_users"] = {}
+
+if "demo_logged_in" not in st.session_state:
+    st.session_state["demo_logged_in"] = False
+
+if "demo_username" not in st.session_state:
+    st.session_state["demo_username"] = ""
+
+
+def demo_password_hash(password):
+    """시연용 비밀번호 해시"""
+    return hashlib.sha256(
+        password.encode("utf-8")
+    ).hexdigest()
+
+
+# 로그인하지 않은 경우 로그인 화면 표시
+if not st.session_state["demo_logged_in"]:
+
+    st.markdown(
+        """
+        <div style="
+            max-width:720px;
+            margin:3rem auto 1rem auto;
+            text-align:center;
+            background:#F0F7F0;
+            border:1px solid #DCEADF;
+            border-radius:24px;
+            padding:2rem 1.5rem;
+        ">
+            <div style="font-size:3rem;">🥗</div>
+            <h1 style="color:#377D61;margin-bottom:.25rem;">
+                NutriDay
+            </h1>
+            <p style="color:#69756E;margin-top:0;">
+                나에게 맞는 하루 영양 관리
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    login_tab, signup_tab = st.tabs(
+        ["🔐 로그인", "✨ 회원가입"]
+    )
+
+    # -----------------------------------------------------
+    # 로그인
+    # -----------------------------------------------------
+    with login_tab:
+        st.markdown("### 다시 만나서 반가워요!")
+        st.caption("수행평가 시연용 계정으로 로그인해 주세요.")
+
+        with st.form("demo_login_form"):
+            login_username = st.text_input(
+                "아이디",
+                key="demo_login_username",
+                max_chars=30,
+            ).strip()
+
+            login_password = st.text_input(
+                "비밀번호",
+                type="password",
+                key="demo_login_password",
+            )
+
+            login_submit = st.form_submit_button(
+                "로그인",
+                use_container_width=True,
+            )
+
+        if login_submit:
+            saved_hash = st.session_state[
+                "demo_users"
+            ].get(login_username)
+
+            if (
+                saved_hash
+                and saved_hash == demo_password_hash(login_password)
+            ):
+                st.session_state["demo_logged_in"] = True
+                st.session_state["demo_username"] = login_username
+                st.rerun()
+            else:
+                st.error("아이디 또는 비밀번호를 확인해 주세요.")
+
+    # -----------------------------------------------------
+    # 회원가입
+    # -----------------------------------------------------
+    with signup_tab:
+        st.markdown("### NutriDay 시작하기")
+        st.caption(
+            "시연용 계정이에요. 실제 비밀번호나 개인정보는 입력하지 마세요."
+        )
+
+        with st.form("demo_signup_form"):
+            signup_username = st.text_input(
+                "새 아이디",
+                key="demo_signup_username",
+                max_chars=30,
+            ).strip()
+
+            signup_password = st.text_input(
+                "새 비밀번호 (4자 이상)",
+                type="password",
+                key="demo_signup_password",
+            )
+
+            signup_password_confirm = st.text_input(
+                "비밀번호 확인",
+                type="password",
+                key="demo_signup_password_confirm",
+            )
+
+            signup_submit = st.form_submit_button(
+                "회원가입",
+                use_container_width=True,
+            )
+
+        if signup_submit:
+            if not signup_username:
+                st.error("아이디를 입력해 주세요.")
+
+            elif len(signup_password) < 4:
+                st.error(
+                    "시연용 비밀번호는 4자 이상으로 입력해 주세요."
+                )
+
+            elif signup_password != signup_password_confirm:
+                st.error("비밀번호가 서로 일치하지 않아요.")
+
+            elif signup_username in st.session_state["demo_users"]:
+                st.error(
+                    "이미 사용 중인 아이디예요. "
+                    "다른 아이디를 입력해 주세요."
+                )
+
+            else:
+                st.session_state["demo_users"][
+                    signup_username
+                ] = demo_password_hash(signup_password)
+
+                st.success(
+                    "회원가입이 완료되었어요! "
+                    "로그인 탭에서 로그인해 주세요."
+                )
+
+    st.info(
+        "시연용 기능 안내: 계정은 현재 세션에만 보관돼요. "
+        "세션이 종료되거나 앱이 재시작되면 계정 정보가 "
+        "사라질 수 있습니다."
+    )
+
+    # 로그인 전에는 계산 화면을 표시하지 않음
+    st.stop()
+
+
 # =========================================================
 # 사이드바
 # =========================================================
 with st.sidebar:
     st.markdown("## 🥗 NutriDay")
+
+    st.caption(
+        f"로그인 계정: "
+        f"{st.session_state.get('demo_username', '')}"
+    )
+
+    if st.button(
+        "로그아웃",
+        use_container_width=True,
+        key="demo_logout_button",
+    ):
+        st.session_state["demo_logged_in"] = False
+        st.session_state["demo_username"] = ""
+        st.rerun()
+
     st.caption("나에게 맞는 하루 영양 관리")
 
     st.page_link(
@@ -282,7 +460,9 @@ def estimate_eer(age, sex, height_cm, weight_kg, pal_category):
                 "very_active": (-709.59, -22.25, 18.22, 14.25),
             }
 
-        constant, age_coef, height_coef, weight_coef = coefficients[pal]
+        constant, age_coef, height_coef, weight_coef = (
+            coefficients[pal]
+        )
 
         eer = (
             constant
@@ -360,6 +540,7 @@ st.info(
     "값이 아니며 실제 값과 차이가 날 수 있어요."
 )
 
+
 # =========================================================
 # 사용자 입력
 # =========================================================
@@ -417,9 +598,14 @@ with st.form("bmr_form"):
     activity_col1, activity_col2, activity_col3 = st.columns(3)
 
     with activity_col1:
-        walking_options = ["30분 미만", "30~60분", "60분 초과"]
+        walking_options = [
+            "30분 미만",
+            "30~60분",
+            "60분 초과",
+        ]
         walking_default = st.session_state.get(
-            "input_walking_time", "30~60분"
+            "input_walking_time",
+            "30~60분",
         )
 
         walking_time = st.selectbox(
@@ -433,9 +619,15 @@ with st.form("bmr_form"):
         )
 
     with activity_col2:
-        frequency_options = ["0~1회", "2회", "3~4회", "5회 이상"]
+        frequency_options = [
+            "0~1회",
+            "2회",
+            "3~4회",
+            "5회 이상",
+        ]
         frequency_default = st.session_state.get(
-            "input_exercise_frequency", "3~4회"
+            "input_exercise_frequency",
+            "3~4회",
         )
 
         exercise_frequency = st.selectbox(
@@ -456,7 +648,8 @@ with st.form("bmr_form"):
             "운동하지 않음",
         ]
         intensity_default = st.session_state.get(
-            "input_exercise_intensity", "중간 강도"
+            "input_exercise_intensity",
+            "중간 강도",
         )
 
         exercise_intensity = st.selectbox(
@@ -474,6 +667,7 @@ with st.form("bmr_form"):
         "앉아 있는 시간과 걷기·이동이 섞여 있음",
         "하루 중 걷거나 서 있는 시간이 많은 편",
     ]
+
     movement_default = st.session_state.get(
         "input_daily_movement",
         "앉아 있는 시간과 걷기·이동이 섞여 있음",
@@ -513,13 +707,15 @@ if submitted:
     st.session_state["input_exercise_intensity"] = exercise_intensity
     st.session_state["input_daily_movement"] = daily_movement
 
-    pal_category, activity_score, activity_score_details = (
-        estimate_activity_level(
-            walking_time,
-            exercise_frequency,
-            exercise_intensity,
-            daily_movement,
-        )
+    (
+        pal_category,
+        activity_score,
+        activity_score_details,
+    ) = estimate_activity_level(
+        walking_time,
+        exercise_frequency,
+        exercise_intensity,
+        daily_movement,
     )
 
     st.session_state["input_pal"] = pal_category
@@ -584,7 +780,10 @@ if submitted:
 # =========================================================
 # 결과 표시
 # =========================================================
-bmr_result = st.session_state.get("bmr_result", "not_calculated")
+bmr_result = st.session_state.get(
+    "bmr_result",
+    "not_calculated",
+)
 
 if bmr_result is not None and bmr_result != "not_calculated":
     bmr_value = float(bmr_result)
@@ -602,8 +801,14 @@ if bmr_result is not None and bmr_result != "not_calculated":
 
     metric1, metric2, metric3 = st.columns(3)
 
-    metric1.metric("추정 기초대사량", f"{bmr_value:,.0f} kcal/일")
-    metric2.metric("예상 하루 에너지 필요량", f"{eer_value:,.0f} kcal/일")
+    metric1.metric(
+        "추정 기초대사량",
+        f"{bmr_value:,.0f} kcal/일",
+    )
+    metric2.metric(
+        "예상 하루 에너지 필요량",
+        f"{eer_value:,.0f} kcal/일",
+    )
     metric3.metric(
         "적용 연령대",
         st.session_state.get("calculation_age_group", "-"),
@@ -624,12 +829,14 @@ if bmr_result is not None and bmr_result != "not_calculated":
             "별도 영유아 계산 화면을 제공하지 않아 "
             "이 연령대의 하루 에너지 필요량을 계산하지 않아요."
         )
+
     elif age_now < 19:
         st.warning(
             "어린이·청소년용 EER 공식에는 성장에 필요한 "
             "에너지 항이 포함되어 있어요. 이 결과는 추정값이며, "
             "이를 근거로 섭취량을 엄격하게 제한하지 마세요."
         )
+
     else:
         st.caption(
             "EER은 연령·성별·키·체중과 추정 활동 수준을 "
@@ -646,21 +853,27 @@ if bmr_result is not None and bmr_result != "not_calculated":
         f"- 하루 걷기·이동 시간: "
         f"**{st.session_state.get('calculated_walking_time', '-')}**"
     )
+
     st.write(
         f"- 주당 운동 횟수: "
         f"**{st.session_state.get('calculated_exercise_frequency', '-')}**"
     )
+
     st.write(
         f"- 주된 운동 강도: "
         f"**{st.session_state.get('calculated_exercise_intensity', '-')}**"
     )
+
     st.write(
         f"- 운동 외 일상 활동: "
         f"**{st.session_state.get('calculated_daily_movement', '-')}**"
     )
 
     activity_score = st.session_state.get("activity_score", 0)
-    score_details = st.session_state.get("activity_score_details", {})
+    score_details = st.session_state.get(
+        "activity_score_details",
+        {},
+    )
 
     st.markdown(
         f"**활동량 점수: {activity_score}점**"
@@ -675,7 +888,6 @@ if bmr_result is not None and bmr_result != "not_calculated":
                 for name, points in score_details.items()
             )
         )
-
 
     # -----------------------------------------------------
     # 식단 페이지 연결 안내 및 이동 버튼
