@@ -261,11 +261,9 @@ def show_auth_page():
                             "로그인해 주세요."
                         )
 
-                except Exception:
-                    st.error(
-                        "회원가입에 실패했어요. 이메일 형식이 올바른지, "
-                        "이미 가입된 이메일인지 확인해 주세요."
-                    )
+                except Exception as e:
+                    st.error("회원가입 오류가 발생했어요.")
+                    st.code(f"{type(e).__name__}: {e}")
 
     st.caption(
         "NutriDay는 교육용 영양 관리 도구이며 "
