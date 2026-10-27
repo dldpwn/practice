@@ -94,6 +94,8 @@ def get_supabase_client() -> Client:
         st.secrets["SUPABASE_KEY"],
     )
 
+# Supabase URL 설정 확인용
+st.write("Supabase URL 설정 확인:", st.secrets["SUPABASE_URL"])
 
 try:
     supabase = get_supabase_client()
@@ -104,7 +106,6 @@ except Exception:
         "등록되어 있는지 확인해 주세요."
     )
     st.stop()
-
 
 # =========================================================
 # 로그인 상태 복원
