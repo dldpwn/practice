@@ -11,10 +11,9 @@ from datetime import date, timedelta
 # ==================================================
 
 st.set_page_config(
-    page_title="NutriDay | 식사 기록",
-    page_icon="🍽️",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    page_title="한 달 맞춤 식단 | NutriDay",
+    page_icon="🥗",
+    layout="wide"
 )
 
 # ==================================================
