@@ -15,13 +15,14 @@ st.set_page_config(
     page_icon="🍽️",
     layout="wide"
 )
-st.page_link(
-    "pages/calculate.py",
-    label="🥗 식단 플래너"
-)
+
 st.page_link(
     "main.py",
     label="home"
+)
+st.page_link(
+    "pages/calculate.py",
+    label="🥗 식단 플래너"
 )
 # ==================================================
 # 디자인
