@@ -136,7 +136,10 @@ with st.sidebar:
         "pages/calculate.py",
         label="🥗 한 달 맞춤 식단",
     )
-
+    st.page_link(
+        "pages/record.py",
+        label="🍽️ 식사 기록 & 영양 관리",
+    )
     st.divider()
 
     if st.button(
