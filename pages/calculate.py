@@ -8,11 +8,11 @@ from datetime import date, timedelta
 # ==================================================
 # 페이지 설정
 # ==================================================
-
 st.set_page_config(
-    page_title="한 달 맞춤 식단 | NutriDay",
-    page_icon="🥗",
-    layout="wide"
+    page_title="NutriDay | 기초대사량 & 영양 가이드",
+    page_icon="🧪",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 st.page_link(
     "pages/record.py",
