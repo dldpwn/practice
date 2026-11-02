@@ -94,29 +94,7 @@ st.markdown("""
 # ==================================================
 # 사이드바
 # ==================================================
-
-with st.sidebar:
-    st.markdown("## 🥗 NutriDay")
-    st.caption("나에게 맞는 하루 영양 관리")
-
-    st.page_link("main.py", label="🏠 메인 페이지")
-    st.page_link(
-        "pages/calculate.py",
-        label="🥗 한 달 맞춤 식단"
-    )
-
-
-# ==================================================
-# 제목
-# ==================================================
-
-st.title("🍽️ 식사 기록 & 영양 관리")
-st.markdown(
-    "매일 먹은 음식을 기록하고 나의 영양 섭취 현황을 확인해 보세요."
-)
-
-st.divider()
-with st.sidebar:
+ st.sidebar:
     st.markdown("## 🥗 NutriDay")
     st.caption("나에게 맞는 하루 영양 관리")
     st.divider()
