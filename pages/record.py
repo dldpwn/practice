@@ -67,6 +67,47 @@ st.markdown(
 )
 
 st.divider()
+with st.sidebar:
+    st.markdown("## 🥗 NutriDay")
+    st.caption("나에게 맞는 하루 영양 관리")
+    st.divider()
+
+    email = st.session_state.get("auth_email")
+
+    st.markdown("### 👤 내 계정")
+    st.caption(email or "계정 이메일을 확인할 수 없어요.")
+
+    st.divider()
+
+    st.page_link(
+        "main.py",
+        label="🧪 기초대사량 & 영양 가이드",
+    )
+    st.page_link(
+        "pages/calculate.py",
+        label="🥗 한 달 맞춤 식단",
+    )
+
+    st.divider()
+
+    if st.button(
+        "로그아웃",
+        key="main_logout",
+        use_container_width=True,
+    ):
+        try:
+            supabase.auth.sign_out()
+        except Exception:
+            pass
+
+        for key in [
+            "auth_access_token",
+            "auth_refresh_token",
+            "auth_email",
+        ]:
+            st.session_state.pop(key, None)
+
+        st.rerun()
 
 # ==================================================
 # 데이터 저장 설정
