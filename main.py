@@ -11,7 +11,10 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
+st.page_link(
+    "pages/record.py",
+    label="🍽️ 식사 기록 & 영양 관리"
+)
 # =========================================================
 # 디자인
 # =========================================================
