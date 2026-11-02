@@ -16,9 +16,12 @@ st.set_page_config(
     layout="wide"
 )
 st.page_link(
-    "pages/record.py",
-    label="🍽️ 식사 기록 & 영양 관리"
+    "pages/calculate.py",
+    label="🥗 나만의 한 달 식단"
 )
+st.page_link(
+    "main.py",
+    label="🍎 내 몸의 에너지 균형: 기초대사량 & 영양 가이드"
 # ==================================================
 # 디자인
 # ==================================================
