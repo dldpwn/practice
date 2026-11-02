@@ -22,75 +22,123 @@ st.page_link(
 # 디자인
 # ==================================================
 
-st.markdown("""
-<style>
-    html, body, p, label,
-    h1, h2, h3, h4, h5, h6,
-    .stMarkdown,
-    [data-testid="stMetricValue"],
-    [data-testid="stMetricLabel"] {
-        font-family: 'Gowun Dodum', sans-serif !important;
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+
+    /* 전체 글꼴 */
+    html, body, [class*="css"], p, label,
+    h1, h2, h3, h4, span, div {
+        font-family: 'Gowun Dodum', sans-serif;
     }
 
+    /* 전체 배경 */
+    .stApp {
+        background: #FBF9F1;
+        color: #263B32;
+    }
+
+    /* 사이드바 */
+    [data-testid="stSidebar"] {
+        background: #EEF6EF;
+    }
+
+    [data-testid="stSidebarNav"] {
+        display: none;
+    }
+
+    /* 페이지 제목 */
     .main-title {
-        font-size: 2rem;
-        font-weight: 700;
         color: #377D61;
-        margin-bottom: 0.3rem;
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: .25rem;
     }
 
     .sub-text {
-        color: #777777;
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
+        color: #69756E;
+        margin-bottom: 1.2rem;
     }
 
-    .meal-card {
-        background-color: #F1F8F3;
-        padding: 16px;
+    /* 일반 카드 */
+    .info-card {
+        background: #F0F7F0;
+        border: 1px solid #DCEADF;
+        border-radius: 16px;
+        padding: 1rem 1.1rem;
+        margin-bottom: .7rem;
+    }
+
+    /* 지표 카드 */
+    div[data-testid="stMetric"] {
+        background: #F0F7F0;
+        border: 1px solid #DCEADF;
+        border-radius: 14px;
+        padding: 1rem;
+    }
+
+    /* 버튼 */
+    div.stButton > button,
+    div.stFormSubmitButton > button {
+        background: #4D9274;
+        color: white;
+        border: 0;
         border-radius: 12px;
-        margin-bottom: 10px;
+        padding: .65rem 1rem;
+        font-weight: 700;
+        transition: .2s;
     }
 
-    .nutriday-table-wrap {
-        width: 100%;
-        overflow-x: auto;
+    div.stButton > button:hover,
+    div.stFormSubmitButton > button:hover {
+        background: #377D61;
+        color: white;
+        border: 0;
+    }
+
+    /* 입력창 */
+    div[data-baseweb="input"] input,
+    div[data-baseweb="textarea"] textarea,
+    div[data-baseweb="select"] > div {
+        background: #FFFFFF;
+        border-radius: 10px;
+        border-color: #DCEADF;
+    }
+
+    /* 탭 */
+    button[data-baseweb="tab"] {
+        color: #69756E;
+        font-weight: 600;
+    }
+
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #377D61;
+        border-bottom-color: #4D9274;
+    }
+
+    /* 표 */
+    [data-testid="stDataFrame"],
+    [data-testid="stDataEditor"] {
         border: 1px solid #DCEADF;
         border-radius: 12px;
-        background: #FFFFFF;
-        margin: 0.5rem 0 1rem;
+        overflow: hidden;
     }
 
-    .nutriday-table {
-        width: 100%;
-        border-collapse: collapse;
-        color: #263B32;
-        font-size: 0.92rem;
+    /* 구분선 */
+    hr {
+        border-color: #DCEADF;
     }
 
-    .nutriday-table th {
-        background: #EEF6EF;
-        color: #377D61;
-        font-weight: 700;
-        padding: 0.7rem;
-        text-align: center;
-        white-space: nowrap;
-        border-bottom: 1px solid #DCEADF;
+    /* 안내 메시지 */
+    [data-testid="stAlert"] {
+        border-radius: 12px;
     }
 
-    .nutriday-table td {
-        padding: 0.65rem;
-        text-align: center;
-        border-bottom: 1px solid #EDF2ED;
-    }
-
-    .nutriday-table tr:last-child td {
-        border-bottom: 0;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 # ==================================================
 # 사이드바
 # ==================================================
