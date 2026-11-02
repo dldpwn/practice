@@ -15,13 +15,7 @@ st.set_page_config(
     page_icon="🥗",
     layout="wide"
 )
-st.page_link(
-    "pages/calculate.py",
-    label="🥗 나만의 한 달 식단"
-)
-st.page_link(
-    "main.py",
-    label="🍎 내 몸의 에너지 균형: 기초대사량 & 영양 가이드"
+
 # ==================================================
 # 디자인
 # ==================================================
