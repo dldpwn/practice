@@ -14,10 +14,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-st.page_link(
-    "pages/record.py",
-    label="🍽️ 식사 기록 & 영양 관리"
-)
+
 # ==================================================
 # 디자인
 # ==================================================
@@ -939,6 +936,12 @@ if "monthly_plan" in st.session_state:
         file_name="NutriDay_30day_meal_plan.csv",
         mime="text/csv",
         use_container_width=True
+    )
+    st.button(
+        "🍽️ 식사 기록 & 영양 관리로 이동하기 →",
+        key="go_to_record",
+        use_container_width=True,
+        on_click=lambda: st.switch_page("pages/record.py"),
     )
 
 else:
