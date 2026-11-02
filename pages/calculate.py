@@ -110,19 +110,53 @@ with st.sidebar:
 # 제목
 # ==================================================
 
+st.title("🍽️ 식사 기록 & 영양 관리")
 st.markdown(
-    '<div class="main-title">🥗 나만의 한 달 식단</div>',
-    unsafe_allow_html=True
+    "매일 먹은 음식을 기록하고 나의 영양 섭취 현황을 확인해 보세요."
 )
 
-st.markdown(
-    '<div class="sub-text">'
-    '나의 생활 습관과 음식 선호도를 반영해 '
-    '30일 식단을 구성하고 영양소를 분석해 보세요.'
-    '</div>',
-    unsafe_allow_html=True
-)
+st.divider()
+with st.sidebar:
+    st.markdown("## 🥗 NutriDay")
+    st.caption("나에게 맞는 하루 영양 관리")
+    st.divider()
 
+    email = st.session_state.get("auth_email")
+
+    st.markdown("### 👤 내 계정")
+    st.caption(email or "계정 이메일을 확인할 수 없어요.")
+
+    st.divider()
+
+    st.page_link(
+        "main.py",
+        label="🧪 기초대사량 & 영양 가이드",
+    )
+    st.page_link(
+        "pages/calculate.py",
+        label="🥗 한 달 맞춤 식단",
+    )
+
+    st.divider()
+
+    if st.button(
+        "로그아웃",
+        key="main_logout",
+        use_container_width=True,
+    ):
+        try:
+            supabase.auth.sign_out()
+        except Exception:
+            pass
+
+        for key in [
+            "auth_access_token",
+            "auth_refresh_token",
+            "auth_email",
+        ]:
+            st.session_state.pop(key, None)
+
+        st.rerun()
 
 # ==================================================
 # 하루 에너지 참고값 불러오기
