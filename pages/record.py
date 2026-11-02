@@ -534,31 +534,163 @@ if not has_records:
     )
 
 
+
 # ==================================================
-# 영양 분석 영역
+# 하루 영양 분석
+# ==================================================
+
+st.divider()
+st.subheader("📊 하루 영양 분석")
+
+day_record = records.get(date_key, {})
+
+all_foods = []
+
+for meal in MEALS:
+    all_foods.extend(
+        normalize_foods(day_record.get(meal, []))
+    )
+
+if all_foods:
+
+    total_foods = len(all_foods)
+
+    total_amount = sum(
+        food["섭취량(g)"]
+        for food in all_foods
+    )
+
+    col1, col2 = st.columns(2)
+
+    col1.metric(
+        "기록한 음식 수",
+        f"{total_foods}개"
+    )
+
+    col2.metric(
+        "총 섭취량",
+        f"{total_amount:,.1f}g"
+    )
+
+    st.markdown("### 🍴 식사별 음식 기록")
+
+    meal_summary = []
+
+    for meal in MEALS:
+
+        foods = normalize_foods(
+            day_record.get(meal, [])
+        )
+
+        meal_summary.append({
+            "식사": meal,
+            "음식 수": len(foods),
+            "섭취량(g)": sum(
+                food["섭취량(g)"]
+                for food in foods
+            )
+        })
+
+    meal_summary_df = pd.DataFrame(meal_summary)
+
+    st.dataframe(
+        meal_summary_df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.markdown("### 🥗 오늘 기록한 음식")
+
+    food_summary_df = pd.DataFrame(all_foods)
+
+    st.dataframe(
+        food_summary_df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+else:
+
+    st.info(
+        "아직 저장된 식사 기록이 없습니다. "
+        "음식과 섭취량을 입력하면 이곳에서 확인할 수 있습니다."
+    )
+
+
+# ==================================================
+# 영양소 분석 준비 영역
 # ==================================================
 
 st.divider()
 
-st.subheader("📊 하루 영양 분석")
+st.subheader("🧬 영양소별 섭취 분석")
 
-st.info(
+st.markdown(
     """
-    **영양성분 자동 분석 기능을 준비하고 있습니다.**
-
-    식품영양성분 데이터베이스를 연결하면 입력한 음식 이름과
-    섭취량을 바탕으로 다음 정보를 자동 계산합니다.
-
-    - 총 섭취 열량
-    - 탄수화물 · 단백질 · 지방
-    - 나트륨 · 칼슘 · 철분 · 칼륨
-    - 식사별 영양성분 및 하루 총섭취량
+    식품영양성분 데이터베이스를 연결하면 음식의 섭취량을 바탕으로
+    다음 영양소를 자동으로 분석할 예정입니다.
     """
 )
 
+nutrition_tabs = st.tabs([
+    "3대 영양소",
+    "무기질",
+    "종합 분석"
+])
+
+with nutrition_tabs[0]:
+
+    st.markdown("#### 🍚 3대 영양소")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("탄수화물", "분석 준비 중")
+    col2.metric("단백질", "분석 준비 중")
+    col3.metric("지방", "분석 준비 중")
+
+    st.caption(
+        "탄수화물·단백질·지방의 섭취량과 에너지 구성 비율을 분석합니다."
+    )
+
+with nutrition_tabs[1]:
+
+    st.markdown("#### 🧂 무기질")
+
+    col1, col2 = st.columns(2)
+    col3, col4 = st.columns(2)
+
+    col1.metric("나트륨", "분석 준비 중")
+    col2.metric("칼슘", "분석 준비 중")
+    col3.metric("철분", "분석 준비 중")
+    col4.metric("칼륨", "분석 준비 중")
+
+    st.caption(
+        "음식에 포함된 주요 무기질의 섭취량을 분석합니다."
+    )
+
+with nutrition_tabs[2]:
+
+    st.markdown("#### 📋 하루 영양 종합 분석")
+
+    st.info(
+        """
+        데이터베이스 연결 후 다음 내용을 제공할 예정입니다.
+
+        - 하루 총섭취 열량
+        - 3대 영양소별 섭취량과 비율
+        - 무기질별 섭취량
+        - 식사별 영양성분 비교
+        - 영양소 기준과 실제 섭취량 비교
+        """
+    )
+
+    st.caption(
+        "영양 기준은 연령과 성별 등 필요한 조건을 고려해 적용할 예정입니다."
+    )
+
 
 # ==================================================
-# 영양 섭취 그래프 영역
+# 영양 섭취 그래프
 # ==================================================
 
 st.divider()
@@ -574,91 +706,91 @@ graph_mode = st.radio(
 
 if graph_mode == "하루":
 
-    st.caption(
-        f"{selected_date.strftime('%Y년 %m월 %d일')}의 영양 섭취 분석"
+    graph_dates = [date_key]
+
+else:
+
+    graph_dates = [
+        (selected_date - timedelta(days=i)).isoformat()
+        for i in range(6, -1, -1)
+    ]
+
+graph_rows = []
+
+for graph_date in graph_dates:
+
+    day_data = records.get(graph_date, {})
+
+    for meal in MEALS:
+
+        foods = normalize_foods(
+            day_data.get(meal, [])
+        )
+
+        graph_rows.append({
+            "날짜": graph_date,
+            "식사": meal,
+            "음식 수": len(foods),
+            "섭취량(g)": sum(
+                food["섭취량(g)"]
+                for food in foods
+            )
+        })
+
+graph_df = pd.DataFrame(graph_rows)
+
+if graph_mode == "하루":
+
+    st.markdown("#### 🍴 식사별 음식 섭취량")
+
+    chart_df = graph_df[
+        graph_df["날짜"] == date_key
+    ]
+
+    fig = px.bar(
+        chart_df,
+        x="식사",
+        y="섭취량(g)",
+        text_auto=".1f",
+        title="식사별 기록된 음식 섭취량",
+        color="식사"
     )
 
 else:
 
-    start_date = selected_date - timedelta(days=6)
+    st.markdown("#### 📅 최근 7일 음식 섭취량")
 
-    st.caption(
-        f"{start_date.strftime('%Y년 %m월 %d일')} ~ "
-        f"{selected_date.strftime('%Y년 %m월 %d일')}"
+    daily_graph = (
+        graph_df.groupby("날짜", as_index=False)
+        ["섭취량(g)"].sum()
     )
 
-st.info(
-    "식품영양성분 데이터베이스 연결 후 "
-    "영양소별 섭취량과 기간별 변화 그래프가 표시됩니다."
+    fig = px.line(
+        daily_graph,
+        x="날짜",
+        y="섭취량(g)",
+        markers=True,
+        title="최근 7일간 기록된 음식 섭취량"
+    )
+
+fig.update_layout(
+    plot_bgcolor="#FBF9F1",
+    paper_bgcolor="#FBF9F1",
+    font_family="Gowun Dodum",
+    xaxis_title="식사" if graph_mode == "하루" else "날짜",
+    yaxis_title="섭취량(g)",
+    showlegend=(graph_mode == "하루")
 )
 
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
-# ==================================================
-# 기록 다운로드
-# ==================================================
-
-st.divider()
-
-st.subheader("📥 식사 기록 다운로드")
-
-if records:
-
-    export_rows = []
-
-    for saved_date, day_record in records.items():
-
-        for meal in MEALS:
-
-            foods = normalize_foods(
-                day_record.get(meal, [])
-            )
-
-            for food in foods:
-
-                row = {
-                    "날짜": saved_date,
-                    "식사": meal,
-                    "음식 이름": food["음식 이름"],
-                    "섭취량(g)": food["섭취량(g)"]
-                }
-
-                export_rows.append(row)
-
-    if export_rows:
-
-        export_df = pd.DataFrame(export_rows)
-
-        export_df["날짜"] = pd.to_datetime(
-            export_df["날짜"]
-        )
-
-        export_df = export_df.sort_values(
-            by=["날짜", "식사"]
-        )
-
-        export_df["날짜"] = (
-            export_df["날짜"]
-            .dt.strftime("%Y-%m-%d")
-        )
-
-        st.download_button(
-            "📥 식사 기록 CSV 다운로드",
-
-            data=export_df.to_csv(
-                index=False
-            ).encode("utf-8-sig"),
-
-            file_name="NutriDay_meal_records.csv",
-
-            mime="text/csv",
-
-            use_container_width=True
-        )
-
-else:
-
-    st.info("다운로드할 식사 기록이 없습니다.")
-
+st.caption(
+    "현재 그래프는 음식의 무게를 기준으로 표시합니다. "
+    "영양성분 데이터베이스 연결 후 열량과 영양소별 그래프로 확장됩니다."
+)
 
 # ==================================================
 # 마무리
