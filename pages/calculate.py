@@ -806,3 +806,74 @@ if st.button(
             "goal": goal,
             "energy": daily_energy
         }
+# ==================================================
+# 생성된 식단 출력
+# ==================================================
+
+if "monthly_plan" in st.session_state:
+
+    st.divider()
+    st.markdown("### 🗓️ 나의 30일 식단표")
+
+    plan = st.session_state["monthly_plan"]
+
+    st.success("30일 식단이 생성되었어요!")
+
+    selected_day = st.selectbox(
+        "확인할 날짜를 선택하세요.",
+        options=list(range(1, 31)),
+        format_func=lambda x: f"{x}일 차",
+        key="selected_day"
+    )
+
+    selected_meal = plan[selected_day - 1]
+
+    st.markdown(f"#### 🍽️ {selected_day}일 차 식단")
+
+    meal_names = [
+        key for key in selected_meal
+        if key != "일차"
+    ]
+
+    columns = st.columns(len(meal_names))
+
+    for index, meal_name in enumerate(meal_names):
+
+        with columns[index]:
+            st.markdown(
+                f"""
+                <div class="meal-card">
+                    <b>{meal_name}</b><br>
+                    {selected_meal[meal_name]}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    st.markdown("#### 📋 전체 30일 식단표")
+
+    plan_df = pd.DataFrame(plan)
+
+    st.markdown(
+        '<div class="nutriday-table-wrap">'
+        + plan_df.to_html(
+            index=False,
+            border=0,
+            classes="nutriday-table"
+        )
+        + '</div>',
+        unsafe_allow_html=True
+    )
+
+    st.download_button(
+        "📥 30일 식단표 다운로드",
+        data=plan_df.to_csv(
+            index=False
+        ).encode("utf-8-sig"),
+        file_name="NutriDay_30day_meal_plan.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+
+else:
+    st.info("식단 생성 버튼을 눌러 나만의 식단을 만들어 보세요!")
