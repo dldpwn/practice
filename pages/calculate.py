@@ -2,7 +2,19 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import random
+from food_data import (
+    load_food_database,
+    calculate_nutrients as calculate_food_nutrients,
+    get_food_info,
+    search_food
+)
 
+try:
+    food_db = load_food_database()
+    food_db_error = None
+except Exception as e:
+    food_db = pd.DataFrame()
+    food_db_error = str(e)
 # ==================================================
 # 페이지 설정
 # ==================================================
