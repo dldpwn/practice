@@ -326,129 +326,57 @@ with col2:
 # 음식 데이터
 # 기존 사용자가 제공한 메뉴별 영양 정보 유지
 # ==================================================
-foods = {
-    "닭고기 덮밥": {
-        "group": "닭고기", "style": "한식",
-        "kcal": 450, "carbs": 65, "protein": 28, "fat": 9,
-        "fiber": 4, "calcium": 45, "iron": 2.0, "potassium": 430,
-        "sodium": 450, "vitamin_a": 35, "vitamin_c": 12, "vitamin_d": 0.2
-    },
-    "두부 비빔밥": {
-        "group": "두부", "style": "한식",
-        "kcal": 430, "carbs": 68, "protein": 18, "fat": 10,
-        "fiber": 7, "calcium": 160, "iron": 3.0, "potassium": 620,
-        "sodium": 500, "vitamin_a": 180, "vitamin_c": 18, "vitamin_d": 0
-    },
-    "생선구이 정식": {
-        "group": "생선", "style": "한식",
-        "kcal": 470, "carbs": 65, "protein": 27, "fat": 12,
-        "fiber": 5, "calcium": 55, "iron": 2.0, "potassium": 520,
-        "sodium": 480, "vitamin_a": 30, "vitamin_c": 15, "vitamin_d": 5
-    },
-    "소고기 채소볶음 정식": {
-        "group": "소고기", "style": "한식",
-        "kcal": 490, "carbs": 62, "protein": 29, "fat": 13,
-        "fiber": 5, "calcium": 60, "iron": 3.5, "potassium": 480,
-        "sodium": 520, "vitamin_a": 100, "vitamin_c": 20, "vitamin_d": 0.2
-    },
-    "돼지고기 채소볶음": {
-        "group": "돼지고기", "style": "한식",
-        "kcal": 480, "carbs": 60, "protein": 25, "fat": 15,
-        "fiber": 5, "calcium": 50, "iron": 2.5, "potassium": 450,
-        "sodium": 550, "vitamin_a": 90, "vitamin_c": 18, "vitamin_d": 0.5
-    },
-    "달걀 채소볶음밥": {
-        "group": "달걀", "style": "한식",
-        "kcal": 420, "carbs": 62, "protein": 15, "fat": 12,
-        "fiber": 4, "calcium": 65, "iron": 2.0, "potassium": 350,
-        "sodium": 430, "vitamin_a": 140, "vitamin_c": 15, "vitamin_d": 1.2
-    },
-    "닭고기 샐러드": {
-        "group": "닭고기", "style": "간편식",
-        "kcal": 350, "carbs": 25, "protein": 30, "fat": 13,
-        "fiber": 6, "calcium": 90, "iron": 2.5, "potassium": 600,
-        "sodium": 400, "vitamin_a": 250, "vitamin_c": 35, "vitamin_d": 0.2
-    },
-    "두부 샐러드": {
-        "group": "두부", "style": "간편식",
-        "kcal": 320, "carbs": 28, "protein": 17, "fat": 14,
-        "fiber": 7, "calcium": 180, "iron": 3.0, "potassium": 520,
-        "sodium": 350, "vitamin_a": 220, "vitamin_c": 30, "vitamin_d": 0
-    },
-    "통밀빵과 달걀": {
-        "group": "달걀", "style": "간편식",
-        "kcal": 330, "carbs": 40, "protein": 17, "fat": 11,
-        "fiber": 5, "calcium": 100, "iron": 2.5, "potassium": 280,
-        "sodium": 420, "vitamin_a": 110, "vitamin_c": 0, "vitamin_d": 1.0
-    },
-    "오트밀과 우유": {
-        "group": "우유", "style": "간편식",
-        "kcal": 350, "carbs": 52, "protein": 14, "fat": 9,
-        "fiber": 7, "calcium": 300, "iron": 2.5, "potassium": 480,
-        "sodium": 150, "vitamin_a": 70, "vitamin_c": 2, "vitamin_d": 2.5
-    },
-    "과일과 요구르트": {
-        "group": "과일", "style": "간편식",
-        "kcal": 200, "carbs": 35, "protein": 7, "fat": 4,
-        "fiber": 4, "calcium": 220, "iron": 0.5, "potassium": 350,
-        "sodium": 90, "vitamin_a": 30, "vitamin_c": 35, "vitamin_d": 0.5
-    },
-    "밥과 두부조림": {
-        "group": "두부", "style": "한식",
-        "kcal": 400, "carbs": 63, "protein": 18, "fat": 9,
-        "fiber": 4, "calcium": 170, "iron": 2.5, "potassium": 400,
-        "sodium": 400, "vitamin_a": 50, "vitamin_c": 8, "vitamin_d": 0
-    },
-    "고구마와 달걀": {
-        "group": "달걀", "style": "다양",
-        "kcal": 320, "carbs": 48, "protein": 13, "fat": 8,
-        "fiber": 6, "calcium": 60, "iron": 1.5, "potassium": 550,
-        "sodium": 180, "vitamin_a": 600, "vitamin_c": 15, "vitamin_d": 1
-    },
-    "생선 샐러드": {
-        "group": "생선", "style": "간편식",
-        "kcal": 360, "carbs": 25, "protein": 27, "fat": 15,
-        "fiber": 6, "calcium": 100, "iron": 2.0, "potassium": 500,
-        "sodium": 420, "vitamin_a": 180, "vitamin_c": 30, "vitamin_d": 5
-    },
-    "채소 비빔밥": {
-        "group": "채소", "style": "한식",
-        "kcal": 400, "carbs": 70, "protein": 11, "fat": 9,
-        "fiber": 8, "calcium": 100, "iron": 3.0, "potassium": 650,
-        "sodium": 430, "vitamin_a": 280, "vitamin_c": 25, "vitamin_d": 0
-    },
-    "과일 오트밀": {
-        "group": "과일", "style": "간편식",
-        "kcal": 330, "carbs": 55, "protein": 11, "fat": 8,
-        "fiber": 8, "calcium": 180, "iron": 2.5, "potassium": 430,
-        "sodium": 120, "vitamin_a": 30, "vitamin_c": 25, "vitamin_d": 1.5
-    },
-    "닭고기 채소볶음": {
-        "group": "닭고기", "style": "다양",
-        "kcal": 430, "carbs": 45, "protein": 32, "fat": 12,
-        "fiber": 6, "calcium": 80, "iron": 2.5, "potassium": 520,
-        "sodium": 420, "vitamin_a": 180, "vitamin_c": 35, "vitamin_d": 0.2
-    },
-    "소고기 덮밥": {
-        "group": "소고기", "style": "다양",
-        "kcal": 470, "carbs": 62, "protein": 27, "fat": 13,
-        "fiber": 4, "calcium": 45, "iron": 3.5, "potassium": 430,
-        "sodium": 480, "vitamin_a": 25, "vitamin_c": 12, "vitamin_d": 0.2
-    },
-    "돼지고기 덮밥": {
-        "group": "돼지고기", "style": "다양",
-        "kcal": 460, "carbs": 63, "protein": 25, "fat": 12,
-        "fiber": 4, "calcium": 40, "iron": 2.2, "potassium": 420,
-        "sodium": 500, "vitamin_a": 25, "vitamin_c": 10, "vitamin_d": 0.4
-    },
-    "두부 채소덮밥": {
-        "group": "두부", "style": "다양",
-        "kcal": 420, "carbs": 62, "protein": 19, "fat": 11,
-        "fiber": 7, "calcium": 180, "iron": 3.0, "potassium": 560,
-        "sodium": 400, "vitamin_a": 200, "vitamin_c": 25, "vitamin_d": 0
-    },
-}
+# ==================================================
+# CSV 기반 음식 데이터
+# ==================================================
 
+foods = {}
+
+if food_db_error:
+    st.error(f"식품 데이터 불러오기 오류: {food_db_error}")
+
+else:
+    for _, row in food_db.iterrows():
+
+        name = str(row["식품명"]).strip()
+
+        # 식품명에서 음식 분류 추정
+        if any(x in name for x in ["닭", "치킨"]):
+            group = "닭고기"
+        elif any(x in name for x in ["생선", "고등어", "연어", "참치"]):
+            group = "생선"
+        elif any(x in name for x in ["달걀", "계란"]):
+            group = "달걀"
+        elif "두부" in name:
+            group = "두부"
+        elif any(x in name for x in ["소고기", "쇠고기"]):
+            group = "소고기"
+        elif any(x in name for x in ["돼지고기", "돈육"]):
+            group = "돼지고기"
+        elif any(x in name for x in ["과일", "사과", "바나나", "딸기"]):
+            group = "과일"
+        elif any(x in name for x in ["채소", "나물", "샐러드"]):
+            group = "채소"
+        else:
+            group = "기타"
+
+        foods[name] = {
+            "group": group,
+            "style": "다양",
+            "kcal": row.get("에너지(kcal)", 0),
+            "carbs": row.get("탄수화물(g)", 0),
+            "protein": row.get("단백질(g)", 0),
+            "fat": row.get("지방(g)", 0),
+            "fiber": row.get("식이섬유(g)", 0),
+            "calcium": row.get("칼슘(mg)", 0),
+            "iron": row.get("철(mg)", 0),
+            "potassium": row.get("칼륨(mg)", 0),
+            "sodium": row.get("나트륨(mg)", 0),
+            "vitamin_a": row.get("비타민 A(μg RAE)", 0),
+            "vitamin_c": row.get("비타민 C(mg)", 0),
+            "vitamin_d": row.get("비타민 D(μg)", 0),
+            "basis": row.get("영양성분함량기준량", ""),
+        }
 
 # ==================================================
 # 음식 분류
@@ -486,27 +414,29 @@ def matches_food(name, info, terms):
     )
 
 
-def get_food_candidates(style, excluded, meal_name):
-    if meal_name == "아침":
-        source = BREAKFAST_FOODS
-    elif meal_name == "간식":
-        source = SNACK_FOODS
-    else:
-        source = MAIN_MEAL_FOODS
+def get_food_candidates(style, excluded):
 
     candidates = []
 
-    for name in source:
-        info = foods[name]
+    for name, info in foods.items():
 
         if matches_food(name, info, excluded):
             continue
 
-        if style == "한식 위주" and info["style"] not in ["한식", "다양"]:
-            continue
+        if style == "한식 위주":
+            if not any(x in name for x in [
+                "밥", "국", "찌개", "구이",
+                "볶음", "조림", "비빔밥"
+            ]):
+                continue
 
-        if style == "간편식 위주" and info["style"] not in ["간편식", "다양"]:
-            continue
+        elif style == "간편식 위주":
+            if not any(x in name for x in [
+                "샐러드", "샌드위치", "죽",
+                "요거트", "요구르트", "오트밀",
+                "과일", "빵"
+            ]):
+                continue
 
         candidates.append(name)
 
@@ -653,57 +583,42 @@ NUTRIENT_LABELS = {
 }
 
 
-def calculate_daily_nutrition(day_plan):
-    totals = {
-        "kcal": 0,
-        "carbs": 0,
-        "protein": 0,
-        "fat": 0,
-        "fiber": 0,
-        "calcium": 0,
-        "iron": 0,
-        "potassium": 0,
-        "sodium": 0,
-        "vitamin_a": 0,
-        "vitamin_c": 0,
-        "vitamin_d": 0,
+def calculate_nutrients(meal):
+
+    total = {
+        "kcal": 0.0,
+        "carbs": 0.0,
+        "protein": 0.0,
+        "fat": 0.0,
+        "fiber": 0.0,
+        "calcium": 0.0,
+        "iron": 0.0,
+        "potassium": 0.0,
+        "sodium": 0.0,
+        "vitamin_a": 0.0,
+        "vitamin_c": 0.0,
+        "vitamin_d": 0.0
     }
 
-    meal_nutrition = {}
+    for meal_name, food_name in meal.items():
 
-    for meal_name, food_name in day_plan.items():
         if meal_name == "일차":
             continue
 
-        info = foods[food_name]
-        meal_nutrition[meal_name] = info.copy()
+        info = foods.get(food_name)
 
-        for nutrient in totals:
-            totals[nutrient] += info.get(nutrient, 0)
+        if not info:
+            continue
 
-    # 탄단지에서 얻는 에너지 계산
-    macro_energy = {
-        "탄수화물": totals["carbs"] * 4,
-        "단백질": totals["protein"] * 4,
-        "지방": totals["fat"] * 9,
-    }
+        # CSV의 기준량이 100g 또는 100ml이므로
+        # 현재는 기준량 1회분을 그대로 합산한다.
+        for nutrient in total:
+            value = info.get(nutrient, 0)
 
-    macro_energy_total = sum(macro_energy.values())
+            if pd.notna(value):
+                total[nutrient] += float(value)
 
-    if macro_energy_total > 0:
-        macro_percent = {
-            name: value / macro_energy_total * 100
-            for name, value in macro_energy.items()
-        }
-    else:
-        macro_percent = {
-            "탄수화물": 0,
-            "단백질": 0,
-            "지방": 0,
-        }
-
-    return totals, meal_nutrition, macro_energy, macro_percent
-
+    return total
 
 # ==================================================
 # 식단 생성 버튼
