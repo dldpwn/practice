@@ -1,28 +1,26 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import random
 
-# ==================================================
+import streamlit as st
+from supabase import create_client, Client
+
+# =========================================================
 # 페이지 설정
-# ==================================================
+# =========================================================
 st.set_page_config(
-    page_title="NutriDay | 한 달 맞춤 식단",
-    page_icon="🥗",
+    page_title="NutriDay | 기초대사량 & 영양 가이드",
+    page_icon="🧪",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ==================================================
+# =========================================================
 # 디자인
-# ==================================================
+# =========================================================
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
 
-    html, body, [class*="css"], p, label,
-    h1, h2, h3, h4, span, div {
+    html, body, [class*="css"], p, label, h1, h2, h3, h4 {
         font-family: 'Gowun Dodum', sans-serif;
     }
 
@@ -43,19 +41,20 @@ st.markdown(
         color: #377D61;
         font-size: 2rem;
         font-weight: 800;
+        margin-bottom: .25rem;
     }
 
-    .info-card, .meal-card {
+    .sub-text {
+        color: #69756E;
+        margin-bottom: 1.2rem;
+    }
+
+    .info-card {
         background: #F0F7F0;
         border: 1px solid #DCEADF;
         border-radius: 16px;
-        padding: 1rem;
+        padding: 1rem 1.1rem;
         margin-bottom: .7rem;
-    }
-
-    .meal-card {
-        min-height: 100px;
-        text-align: center;
     }
 
     div[data-testid="stMetric"] {
@@ -79,43 +78,228 @@ st.markdown(
     div.stFormSubmitButton > button:hover {
         background: #377D61;
         color: white;
+        border: 0;
     }
-
-    div[data-baseweb="input"] input,
-    div[data-baseweb="textarea"] textarea,
-    div[data-baseweb="select"] > div {
-        background: white;
-        border-radius: 10px;
-        border-color: #DCEADF;
-    }
-
-    button[data-baseweb="tab"] {
-        color: #69756E;
-        font-weight: 600;
-    }
-
-    button[data-baseweb="tab"][aria-selected="true"] {
-        color: #377D61;
-        border-bottom-color: #4D9274;
-    }
-
-    [data-testid="stDataFrame"] {
-        border: 1px solid #DCEADF;
-        border-radius: 12px;
-    }
-
-    hr {
-        border-color: #DCEADF;
-    }
-
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# ==================================================
-# 사이드바
-# ==================================================
+# =========================================================
+# Supabase 연결
+# =========================================================
+@st.cache_resource
+def get_supabase_client() -> Client:
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"],
+    )
+
+
+try:
+    supabase = get_supabase_client()
+except Exception:
+    st.error(
+        "Supabase 연결 설정을 확인해 주세요. "
+        "Streamlit Secrets에 SUPABASE_URL과 SUPABASE_KEY가 "
+        "등록되어 있는지 확인해 주세요."
+    )
+    st.stop()
+
+# =========================================================
+# 세션 초기화
+# =========================================================
+for key in [
+    "auth_access_token",
+    "auth_refresh_token",
+    "auth_email",
+]:
+    if key not in st.session_state:
+        st.session_state[key] = None
+
+
+# =========================================================
+# 로그인 및 회원가입 화면
+# =========================================================
+def show_auth_page():
+    st.markdown(
+        '<div class="main-title">🥗 NutriDay</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="sub-text">'
+        '나에게 맞는 하루 영양 관리, 지금 시작해 보세요.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### 🌿 계정 로그인")
+
+    login_tab, signup_tab = st.tabs(["로그인", "회원가입"])
+
+    with login_tab:
+        with st.form("login_form"):
+            login_email = st.text_input(
+                "이메일",
+                placeholder="example@email.com",
+            )
+            login_password = st.text_input(
+                "비밀번호",
+                type="password",
+                placeholder="비밀번호 입력",
+            )
+            login_submitted = st.form_submit_button(
+                "로그인",
+                use_container_width=True,
+            )
+
+        if login_submitted:
+            if not login_email.strip() or not login_password:
+                st.warning("이메일과 비밀번호를 모두 입력해 주세요.")
+            else:
+                try:
+                    response = supabase.auth.sign_in_with_password({
+                        "email": login_email.strip(),
+                        "password": login_password,
+                    })
+
+                    if response.session:
+                        st.session_state["auth_access_token"] = (
+                            response.session.access_token
+                        )
+                        st.session_state["auth_refresh_token"] = (
+                            response.session.refresh_token
+                        )
+                        st.session_state["auth_email"] = (
+                            response.user.email
+                        )
+
+                        st.success("로그인되었습니다!")
+                        st.rerun()
+                    else:
+                        st.error(
+                            "로그인 세션을 확인할 수 없어요. "
+                            "다시 시도해 주세요."
+                        )
+                except Exception:
+                    st.error(
+                        "로그인에 실패했어요. 이메일과 비밀번호를 "
+                        "확인해 주세요. 이메일 인증이 필요한 계정이라면 "
+                        "먼저 이메일 인증을 완료해 주세요."
+                    )
+
+    with signup_tab:
+        with st.form("signup_form"):
+            signup_email = st.text_input(
+                "이메일",
+                placeholder="example@email.com",
+                key="signup_email",
+            )
+            signup_password = st.text_input(
+                "비밀번호",
+                type="password",
+                placeholder="6자 이상 권장",
+                key="signup_password",
+            )
+            signup_password_confirm = st.text_input(
+                "비밀번호 확인",
+                type="password",
+                placeholder="비밀번호 다시 입력",
+            )
+            signup_submitted = st.form_submit_button(
+                "회원가입",
+                use_container_width=True,
+            )
+
+        if signup_submitted:
+            email = signup_email.strip()
+
+            if not email or not signup_password:
+                st.warning("이메일과 비밀번호를 입력해 주세요.")
+            elif signup_password != signup_password_confirm:
+                st.warning("비밀번호가 서로 일치하지 않아요.")
+            elif len(signup_password) < 6:
+                st.warning("비밀번호를 6자 이상으로 설정해 주세요.")
+            else:
+                try:
+                    response = supabase.auth.sign_up({
+                        "email": email,
+                        "password": signup_password,
+                    })
+
+                    if response.session:
+                        st.session_state["auth_access_token"] = (
+                            response.session.access_token
+                        )
+                        st.session_state["auth_refresh_token"] = (
+                            response.session.refresh_token
+                        )
+                        st.session_state["auth_email"] = (
+                            response.user.email
+                        )
+                        st.success("회원가입이 완료되었습니다!")
+                        st.rerun()
+                    else:
+                        st.success(
+                            "회원가입 요청이 완료되었어요. "
+                            "이메일 인증 안내가 도착했다면 인증 후 로그인해 주세요."
+                        )
+                except Exception:
+                    st.error(
+                        "회원가입에 실패했어요. 이메일 형식이 올바른지, "
+                        "이미 가입된 이메일인지 확인해 주세요."
+                    )
+
+    st.caption(
+        "NutriDay는 교육용 영양 관리 도구이며 "
+        "의료 진단이나 개인별 영양 처방을 대신하지 않아요."
+    )
+
+
+# =========================================================
+# 로그인 세션 복원
+# =========================================================
+is_logged_in = False
+
+access_token = st.session_state.get("auth_access_token")
+refresh_token = st.session_state.get("auth_refresh_token")
+
+if access_token and refresh_token:
+    try:
+        session_response = supabase.auth.set_session(
+            access_token,
+            refresh_token,
+        )
+        session = getattr(session_response, "session", None)
+
+        if session:
+            st.session_state["auth_access_token"] = session.access_token
+            st.session_state["auth_refresh_token"] = session.refresh_token
+
+            user = getattr(session_response, "user", None)
+            if user is not None:
+                st.session_state["auth_email"] = (
+                    getattr(user, "email", None)
+                    or st.session_state.get("auth_email")
+                )
+
+            is_logged_in = True
+    except Exception:
+        for key in [
+            "auth_access_token",
+            "auth_refresh_token",
+            "auth_email",
+        ]:
+            st.session_state.pop(key, None)
+
+if not is_logged_in:
+    show_auth_page()
+    st.stop()
+
+
+# =========================================================
+# 공통 사이드바
+# =========================================================
 with st.sidebar:
     st.markdown("## 🥗 NutriDay")
     st.caption("나에게 맞는 하루 영양 관리")
@@ -128,13 +312,26 @@ with st.sidebar:
 
     st.divider()
 
-    st.page_link("main.py", label="🧪 기초대사량 & 영양 가이드")
-    st.page_link("pages/calculate.py", label="🥗 한 달 맞춤 식단")
-    st.page_link("pages/record.py", label="🍽️ 식사 기록 & 영양 관리")
+    st.page_link(
+        "main.py",
+        label="🧪 기초대사량 & 영양 가이드",
+    )
+    st.page_link(
+        "pages/calculate.py",
+        label="🥗 한 달 맞춤 식단",
+    )
+    st.page_link(
+        "pages/record.py",
+        label="🍽️ 식사 기록 & 영양 관리",
+    )
 
     st.divider()
 
-    if st.button("로그아웃", key="calculate_logout", use_container_width=True):
+    if st.button(
+        "로그아웃",
+        key="main_logout",
+        use_container_width=True,
+    ):
         try:
             supabase.auth.sign_out()
         except Exception:
@@ -150,853 +347,510 @@ with st.sidebar:
         st.rerun()
 
 
-# ==================================================
-# 하루 에너지 참고값 불러오기
-# ==================================================
-energy_keys = [
-    "calculated_tdee",
-    "tdee",
-    "daily_calories",
-    "meal_plan_calories",
+
+# =========================================================
+# 기초대사량 추정 함수
+# =========================================================
+def estimate_bmr(age, sex, height_cm, weight_kg):
+    if age < 3:
+        return None, None
+
+    if age < 10:
+        if sex == "남성":
+            bmr = 22.7 * weight_kg + 495
+        else:
+            bmr = 22.5 * weight_kg + 499
+        formula_name = "Schofield (3~9세)"
+
+    elif age < 18:
+        if sex == "남성":
+            bmr = 17.5 * weight_kg + 651
+        else:
+            bmr = 12.2 * weight_kg + 746
+        formula_name = "Schofield (10~17세)"
+
+    elif age < 65:
+        if sex == "남성":
+            bmr = (
+                10 * weight_kg
+                + 6.25 * height_cm
+                - 5 * age
+                + 5
+            )
+        else:
+            bmr = (
+                10 * weight_kg
+                + 6.25 * height_cm
+                - 5 * age
+                - 161
+            )
+        formula_name = "Mifflin–St Jeor (18~64세)"
+
+    else:
+        if sex == "남성":
+            bmr = 13.5 * weight_kg + 487
+        else:
+            bmr = 10.5 * weight_kg + 596
+        formula_name = "Schofield (고령자용)"
+
+    return max(0, bmr), formula_name
+
+
+def age_group_label(age):
+    if age < 3:
+        return "3세 미만"
+    elif age < 10:
+        return "어린이 (3~9세)"
+    elif age < 19:
+        return "청소년 (10~18세)"
+    elif age < 65:
+        return "성인 (19~64세)"
+    return "고령 성인 (65세 이상)"
+
+
+# =========================================================
+# EER 활동 수준
+# =========================================================
+PAL_OPTIONS = [
+    "비활동적 (Inactive)",
+    "저활동적 (Low active)",
+    "활동적 (Active)",
+    "매우 활동적 (Very active)",
 ]
 
-daily_energy = None
-
-for key in energy_keys:
-    value = st.session_state.get(key)
-
-    if value is not None:
-        try:
-            value = float(value)
-            if value > 0:
-                daily_energy = value
-                break
-        except (ValueError, TypeError):
-            pass
-
-energy_from_previous_page = daily_energy is not None
-
-if daily_energy is None:
-    daily_energy = 2000.0
+PAL_ENGLISH = {
+    "비활동적 (Inactive)": "inactive",
+    "저활동적 (Low active)": "low_active",
+    "활동적 (Active)": "active",
+    "매우 활동적 (Very active)": "very_active",
+}
 
 
+def estimate_eer(age, sex, height_cm, weight_kg, pal_category):
+    if age < 3:
+        return None, None
+
+    pal = PAL_ENGLISH[pal_category]
+    h = float(height_cm)
+    w = float(weight_kg)
+    a = float(age)
+
+    if age < 19:
+        if age < 4:
+            growth = 20 if sex == "남성" else 15
+            age_band = "3세 이상~4세 미만"
+        elif age < 9:
+            growth = 15
+            age_band = "4~8세"
+        elif age < 14:
+            growth = 25 if sex == "남성" else 30
+            age_band = "9~13세"
+        else:
+            growth = 20
+            age_band = "14~18세"
+
+        if sex == "남성":
+            coefficients = {
+                "inactive": (-447.51, 3.68, 13.01, 13.15),
+                "low_active": (19.12, 3.68, 8.62, 20.28),
+                "active": (-388.19, 3.68, 12.66, 20.46),
+                "very_active": (-671.75, 3.68, 15.38, 23.25),
+            }
+        else:
+            coefficients = {
+                "inactive": (55.59, -22.25, 8.43, 17.07),
+                "low_active": (-297.54, -22.25, 12.77, 14.73),
+                "active": (-189.55, -22.25, 11.74, 18.34),
+                "very_active": (-709.59, -22.25, 18.22, 14.25),
+            }
+
+        constant, age_coef, height_coef, weight_coef = coefficients[pal]
+
+        eer = (
+            constant
+            + age_coef * a
+            + height_coef * h
+            + weight_coef * w
+            + growth
+        )
+
+        formula = (
+            f"NASEM/Health Canada 2023 EER "
+            f"({age_band}, 성장 에너지 포함)"
+        )
+
+    else:
+        if sex == "남성":
+            constant = 753.07
+            age_coef = -10.83
+            height_coef = 6.50
+            weight_coef = 14.10
+            pa_factors = {
+                "inactive": 1.00,
+                "low_active": 1.11,
+                "active": 1.25,
+                "very_active": 1.48,
+            }
+        else:
+            constant = 584.90
+            age_coef = -7.01
+            height_coef = 5.72
+            weight_coef = 11.71
+            pa_factors = {
+                "inactive": 1.00,
+                "low_active": 1.12,
+                "active": 1.27,
+                "very_active": 1.45,
+            }
+
+        pa = pa_factors[pal]
+        eer = (
+            constant
+            + age_coef * a
+            + pa * (height_coef * h + weight_coef * w)
+        )
+        formula = "NASEM/Health Canada 2023 EER (19세 이상 성인)"
+
+    return max(0, eer), formula
+
+
+# =========================================================
+# 제목
+# =========================================================
 st.markdown(
-    '<div class="main-title">🥗 나에게 맞는 한 달 식단</div>',
+    '<div class="main-title">'
+    '🍎 내 몸의 에너지 균형: 기초대사량 & 영양 가이드'
+    '</div>',
     unsafe_allow_html=True,
 )
-st.caption("하루 에너지와 음식 선호를 참고해 다양한 식단을 구성해 보세요.")
-
-st.markdown("### 🔥 나의 하루 에너지")
-
-if energy_from_previous_page:
-    st.success(f"이전 페이지에서 계산한 하루 에너지 참고값: {daily_energy:,.0f} kcal")
-else:
-    st.info("이전 페이지의 계산값을 찾지 못해 예시값을 사용하고 있어요.")
-
-    daily_energy = float(
-        st.number_input(
-            "하루 에너지 참고값 (kcal)",
-            min_value=500,
-            max_value=6000,
-            value=2000,
-            step=100,
-        )
-    )
-
-
-# ==================================================
-# 식단 설정
-# ==================================================
-st.divider()
-st.markdown("### ⚙️ 나에게 맞는 식단 설정")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    goal = st.selectbox(
-        "식단 목표",
-        [
-            "균형 잡힌 식사",
-            "활동량을 고려한 식사",
-            "다양한 영양소 섭취",
-        ],
-    )
-
-    meal_style = st.selectbox(
-        "선호하는 식사 유형",
-        [
-            "한식 위주",
-            "간편식 위주",
-            "다양하게 구성",
-        ],
-    )
-
-    meal_count = st.radio(
-        "하루 식사 횟수",
-        ["하루 세 끼", "세 끼 + 간식"],
-        horizontal=True,
-    )
-
-with col2:
-    preference_options = [
-        "닭고기", "생선", "달걀", "두부",
-        "소고기", "돼지고기", "채소", "과일",
-        "우유", "직접 입력",
-    ]
-
-    preference = st.multiselect(
-        "선호하는 음식",
-        preference_options,
-        default=["닭고기", "달걀", "채소"],
-        key="preference_select",
-    )
-
-    custom_preference = []
-
-    if "직접 입력" in preference:
-        custom_preference_text = st.text_input(
-            "선호하는 음식 직접 입력",
-            placeholder="예: 버섯, 고구마, 파스타",
-            key="custom_preference_text",
-        )
-        custom_preference = [
-            item.strip()
-            for item in custom_preference_text.split(",")
-            if item.strip()
-        ]
-
-    all_preferences = list(dict.fromkeys(
-        [item for item in preference if item != "직접 입력"]
-        + custom_preference
-    ))
-
-    excluded_options = [
-        "닭고기", "생선", "달걀", "두부",
-        "소고기", "돼지고기", "우유",
-        "견과류", "직접 입력",
-    ]
-
-    excluded_foods = st.multiselect(
-        "식단에서 제외할 음식",
-        excluded_options,
-        key="excluded_select",
-    )
-
-    custom_excluded = []
-
-    if "직접 입력" in excluded_foods:
-        custom_excluded_text = st.text_input(
-            "제외할 음식 직접 입력",
-            placeholder="예: 버섯, 고구마, 파스타",
-            key="custom_excluded_text",
-        )
-        custom_excluded = [
-            item.strip()
-            for item in custom_excluded_text.split(",")
-            if item.strip()
-        ]
-
-    all_excluded = list(dict.fromkeys(
-        [item for item in excluded_foods if item != "직접 입력"]
-        + custom_excluded
-    ))
-
-    st.caption(
-        "직접 입력은 쉼표로 구분해 주세요. 입력한 단어는 메뉴 이름과 음식 분류를 "
-        "기준으로 비교하며, 실제 메뉴의 모든 재료를 판별하지는 않아요."
-    )
-    st.caption(
-        "알레르기가 있다면 해당 식품과 교차접촉 가능성도 별도로 확인해 주세요."
-    )
-
-
-# ==================================================
-# 음식 데이터
-# 기존 사용자가 제공한 메뉴별 영양 정보 유지
-# ==================================================
-foods = {
-    "닭고기 덮밥": {
-        "group": "닭고기", "style": "한식",
-        "kcal": 450, "carbs": 65, "protein": 28, "fat": 9,
-        "fiber": 4, "calcium": 45, "iron": 2.0, "potassium": 430,
-        "sodium": 450, "vitamin_a": 35, "vitamin_c": 12, "vitamin_d": 0.2
-    },
-    "두부 비빔밥": {
-        "group": "두부", "style": "한식",
-        "kcal": 430, "carbs": 68, "protein": 18, "fat": 10,
-        "fiber": 7, "calcium": 160, "iron": 3.0, "potassium": 620,
-        "sodium": 500, "vitamin_a": 180, "vitamin_c": 18, "vitamin_d": 0
-    },
-    "생선구이 정식": {
-        "group": "생선", "style": "한식",
-        "kcal": 470, "carbs": 65, "protein": 27, "fat": 12,
-        "fiber": 5, "calcium": 55, "iron": 2.0, "potassium": 520,
-        "sodium": 480, "vitamin_a": 30, "vitamin_c": 15, "vitamin_d": 5
-    },
-    "소고기 채소볶음 정식": {
-        "group": "소고기", "style": "한식",
-        "kcal": 490, "carbs": 62, "protein": 29, "fat": 13,
-        "fiber": 5, "calcium": 60, "iron": 3.5, "potassium": 480,
-        "sodium": 520, "vitamin_a": 100, "vitamin_c": 20, "vitamin_d": 0.2
-    },
-    "돼지고기 채소볶음": {
-        "group": "돼지고기", "style": "한식",
-        "kcal": 480, "carbs": 60, "protein": 25, "fat": 15,
-        "fiber": 5, "calcium": 50, "iron": 2.5, "potassium": 450,
-        "sodium": 550, "vitamin_a": 90, "vitamin_c": 18, "vitamin_d": 0.5
-    },
-    "달걀 채소볶음밥": {
-        "group": "달걀", "style": "한식",
-        "kcal": 420, "carbs": 62, "protein": 15, "fat": 12,
-        "fiber": 4, "calcium": 65, "iron": 2.0, "potassium": 350,
-        "sodium": 430, "vitamin_a": 140, "vitamin_c": 15, "vitamin_d": 1.2
-    },
-    "닭고기 샐러드": {
-        "group": "닭고기", "style": "간편식",
-        "kcal": 350, "carbs": 25, "protein": 30, "fat": 13,
-        "fiber": 6, "calcium": 90, "iron": 2.5, "potassium": 600,
-        "sodium": 400, "vitamin_a": 250, "vitamin_c": 35, "vitamin_d": 0.2
-    },
-    "두부 샐러드": {
-        "group": "두부", "style": "간편식",
-        "kcal": 320, "carbs": 28, "protein": 17, "fat": 14,
-        "fiber": 7, "calcium": 180, "iron": 3.0, "potassium": 520,
-        "sodium": 350, "vitamin_a": 220, "vitamin_c": 30, "vitamin_d": 0
-    },
-    "통밀빵과 달걀": {
-        "group": "달걀", "style": "간편식",
-        "kcal": 330, "carbs": 40, "protein": 17, "fat": 11,
-        "fiber": 5, "calcium": 100, "iron": 2.5, "potassium": 280,
-        "sodium": 420, "vitamin_a": 110, "vitamin_c": 0, "vitamin_d": 1.0
-    },
-    "오트밀과 우유": {
-        "group": "우유", "style": "간편식",
-        "kcal": 350, "carbs": 52, "protein": 14, "fat": 9,
-        "fiber": 7, "calcium": 300, "iron": 2.5, "potassium": 480,
-        "sodium": 150, "vitamin_a": 70, "vitamin_c": 2, "vitamin_d": 2.5
-    },
-    "과일과 요구르트": {
-        "group": "과일", "style": "간편식",
-        "kcal": 200, "carbs": 35, "protein": 7, "fat": 4,
-        "fiber": 4, "calcium": 220, "iron": 0.5, "potassium": 350,
-        "sodium": 90, "vitamin_a": 30, "vitamin_c": 35, "vitamin_d": 0.5
-    },
-    "밥과 두부조림": {
-        "group": "두부", "style": "한식",
-        "kcal": 400, "carbs": 63, "protein": 18, "fat": 9,
-        "fiber": 4, "calcium": 170, "iron": 2.5, "potassium": 400,
-        "sodium": 400, "vitamin_a": 50, "vitamin_c": 8, "vitamin_d": 0
-    },
-    "고구마와 달걀": {
-        "group": "달걀", "style": "다양",
-        "kcal": 320, "carbs": 48, "protein": 13, "fat": 8,
-        "fiber": 6, "calcium": 60, "iron": 1.5, "potassium": 550,
-        "sodium": 180, "vitamin_a": 600, "vitamin_c": 15, "vitamin_d": 1
-    },
-    "생선 샐러드": {
-        "group": "생선", "style": "간편식",
-        "kcal": 360, "carbs": 25, "protein": 27, "fat": 15,
-        "fiber": 6, "calcium": 100, "iron": 2.0, "potassium": 500,
-        "sodium": 420, "vitamin_a": 180, "vitamin_c": 30, "vitamin_d": 5
-    },
-    "채소 비빔밥": {
-        "group": "채소", "style": "한식",
-        "kcal": 400, "carbs": 70, "protein": 11, "fat": 9,
-        "fiber": 8, "calcium": 100, "iron": 3.0, "potassium": 650,
-        "sodium": 430, "vitamin_a": 280, "vitamin_c": 25, "vitamin_d": 0
-    },
-    "과일 오트밀": {
-        "group": "과일", "style": "간편식",
-        "kcal": 330, "carbs": 55, "protein": 11, "fat": 8,
-        "fiber": 8, "calcium": 180, "iron": 2.5, "potassium": 430,
-        "sodium": 120, "vitamin_a": 30, "vitamin_c": 25, "vitamin_d": 1.5
-    },
-    "닭고기 채소볶음": {
-        "group": "닭고기", "style": "다양",
-        "kcal": 430, "carbs": 45, "protein": 32, "fat": 12,
-        "fiber": 6, "calcium": 80, "iron": 2.5, "potassium": 520,
-        "sodium": 420, "vitamin_a": 180, "vitamin_c": 35, "vitamin_d": 0.2
-    },
-    "소고기 덮밥": {
-        "group": "소고기", "style": "다양",
-        "kcal": 470, "carbs": 62, "protein": 27, "fat": 13,
-        "fiber": 4, "calcium": 45, "iron": 3.5, "potassium": 430,
-        "sodium": 480, "vitamin_a": 25, "vitamin_c": 12, "vitamin_d": 0.2
-    },
-    "돼지고기 덮밥": {
-        "group": "돼지고기", "style": "다양",
-        "kcal": 460, "carbs": 63, "protein": 25, "fat": 12,
-        "fiber": 4, "calcium": 40, "iron": 2.2, "potassium": 420,
-        "sodium": 500, "vitamin_a": 25, "vitamin_c": 10, "vitamin_d": 0.4
-    },
-    "두부 채소덮밥": {
-        "group": "두부", "style": "다양",
-        "kcal": 420, "carbs": 62, "protein": 19, "fat": 11,
-        "fiber": 7, "calcium": 180, "iron": 3.0, "potassium": 560,
-        "sodium": 400, "vitamin_a": 200, "vitamin_c": 25, "vitamin_d": 0
-    },
-}
-
-
-# ==================================================
-# 음식 분류
-# ==================================================
-BREAKFAST_FOODS = [
-    "통밀빵과 달걀",
-    "오트밀과 우유",
-    "고구마와 달걀",
-    "과일 오트밀",
-    "달걀 채소볶음밥",
-]
-
-SNACK_FOODS = [
-    "과일과 요구르트",
-]
-
-MAIN_MEAL_FOODS = [
-    name for name in foods
-    if name not in BREAKFAST_FOODS + SNACK_FOODS
-]
-
-
-# ==================================================
-# 음식 검색 및 제외 조건
-# ==================================================
-def matches_food(name, info, terms):
-    name_lower = name.casefold()
-    group_lower = str(info.get("group", "")).casefold()
-
-    return any(
-        term.casefold() in name_lower
-        or term.casefold() in group_lower
-        for term in terms
-        if term.strip()
-    )
-
-
-def get_food_candidates(style, excluded, meal_name):
-    if meal_name == "아침":
-        source = BREAKFAST_FOODS
-    elif meal_name == "간식":
-        source = SNACK_FOODS
-    else:
-        source = MAIN_MEAL_FOODS
-
-    candidates = []
-
-    for name in source:
-        info = foods[name]
-
-        if matches_food(name, info, excluded):
-            continue
-
-        if style == "한식 위주" and info["style"] not in ["한식", "다양"]:
-            continue
-
-        if style == "간편식 위주" and info["style"] not in ["간편식", "다양"]:
-            continue
-
-        candidates.append(name)
-
-    return candidates
-
-
-# ==================================================
-# 메뉴 선택
-# ==================================================
-def choose_food(
-    candidates,
-    preference,
-    recent_meals,
-    target_kcal,
-    rng,
-):
-    if not candidates:
-        return None
-
-    recent_set = set(recent_meals[-5:])
-
-    # 최근 메뉴를 우선 제외하되, 후보가 부족하면 다시 허용
-    available = [
-        name for name in candidates
-        if name not in recent_set
-    ]
-
-    if not available:
-        available = candidates.copy()
-
-    preferred = [
-        name for name in available
-        if matches_food(name, foods[name], preference)
-    ]
-
-    # 목표 에너지에 가까운 메뉴를 우선 고려하되,
-    # 선호 메뉴와 다양성도 함께 반영
-    scored = []
-
-    for name in available:
-        info = foods[name]
-
-        energy_difference = abs(info["kcal"] - target_kcal)
-        score = energy_difference
-
-        if preferred and name in preferred:
-            score -= 35
-
-        score += rng.uniform(0, 45)
-
-        scored.append((score, name))
-
-    scored.sort(key=lambda item: item[0])
-
-    # 상위 후보 중 무작위 선택해 매번 같은 식단이 되지 않게 함
-    top_candidates = [name for _, name in scored[:min(3, len(scored))]]
-
-    return rng.choice(top_candidates)
-
-
-# ==================================================
-# 30일 식단 생성
-# ==================================================
-def generate_monthly_plan(
-    style,
-    preference,
-    excluded,
-    meal_count,
-    daily_energy,
-    goal,
-    seed=None,
-):
-    rng = random.Random(seed)
-
-    meal_names = ["아침", "점심", "저녁"]
-
-    if meal_count == "세 끼 + 간식":
-        meal_names.append("간식")
-
-    plan = []
-    recent_meals = []
-
-    if len(meal_names) == 4:
-        energy_ratios = {
-            "아침": 0.25,
-            "점심": 0.30,
-            "저녁": 0.30,
-            "간식": 0.15,
-        }
-    else:
-        energy_ratios = {
-            "아침": 0.30,
-            "점심": 0.35,
-            "저녁": 0.35,
-        }
-
-    candidate_map = {
-        meal: get_food_candidates(style, excluded, meal)
-        for meal in meal_names
-    }
-
-    # 하나라도 후보가 없으면 식단 생성 중단
-    for meal, candidates in candidate_map.items():
-        if not candidates:
-            return None, meal
-
-    for day in range(1, 31):
-        day_plan = {"일차": day}
-
-        for meal in meal_names:
-            target_kcal = daily_energy * energy_ratios[meal]
-
-            chosen = choose_food(
-                candidates=candidate_map[meal],
-                preference=preference,
-                recent_meals=recent_meals,
-                target_kcal=target_kcal,
-                rng=rng,
-            )
-
-            day_plan[meal] = chosen
-            recent_meals.append(chosen)
-
-        plan.append(day_plan)
-
-    return plan, None
-
-
-# ==================================================
-# 영양소 합산
-# ==================================================
-NUTRIENT_LABELS = {
-    "carbs": "탄수화물",
-    "protein": "단백질",
-    "fat": "지방",
-    "fiber": "식이섬유",
-    "calcium": "칼슘",
-    "iron": "철분",
-    "potassium": "칼륨",
-    "sodium": "나트륨",
-    "vitamin_a": "비타민 A",
-    "vitamin_c": "비타민 C",
-    "vitamin_d": "비타민 D",
-}
-
-
-def calculate_daily_nutrition(day_plan):
-    totals = {
-        "kcal": 0,
-        "carbs": 0,
-        "protein": 0,
-        "fat": 0,
-        "fiber": 0,
-        "calcium": 0,
-        "iron": 0,
-        "potassium": 0,
-        "sodium": 0,
-        "vitamin_a": 0,
-        "vitamin_c": 0,
-        "vitamin_d": 0,
-    }
-
-    meal_nutrition = {}
-
-    for meal_name, food_name in day_plan.items():
-        if meal_name == "일차":
-            continue
-
-        info = foods[food_name]
-        meal_nutrition[meal_name] = info.copy()
-
-        for nutrient in totals:
-            totals[nutrient] += info.get(nutrient, 0)
-
-    # 탄단지에서 얻는 에너지 계산
-    macro_energy = {
-        "탄수화물": totals["carbs"] * 4,
-        "단백질": totals["protein"] * 4,
-        "지방": totals["fat"] * 9,
-    }
-
-    macro_energy_total = sum(macro_energy.values())
-
-    if macro_energy_total > 0:
-        macro_percent = {
-            name: value / macro_energy_total * 100
-            for name, value in macro_energy.items()
-        }
-    else:
-        macro_percent = {
-            "탄수화물": 0,
-            "단백질": 0,
-            "지방": 0,
-        }
-
-    return totals, meal_nutrition, macro_energy, macro_percent
-
-
-# ==================================================
-# 식단 생성 버튼
-# ==================================================
-st.divider()
-st.markdown("### 📅 30일 식단표 만들기")
-
-st.write(
-    "설정한 조건에 맞춰 30일 메뉴를 자동으로 구성해요. "
-    "생성된 식단은 날짜별로 확인할 수 있어요."
+st.markdown(
+    '<div class="sub-text">'
+    '연령에 맞는 추정식을 사용해 기초대사량을 계산하고, '
+    '활동 수준을 참고해 하루 에너지 필요량을 추정해 보세요.'
+    '</div>',
+    unsafe_allow_html=True,
+)
+st.info(
+    "기초대사량은 몸이 휴식 상태에서 생명 유지에 사용하는 "
+    "에너지의 추정치예요. 아래 계산 결과는 장비로 직접 측정한 "
+    "값이 아니며 실제 값과 차이가 날 수 있어요."
 )
 
-if st.button("✨ 나만의 한 달 식단 생성하기", use_container_width=True):
-    new_plan, failed_meal = generate_monthly_plan(
-        style=meal_style,
-        preference=all_preferences,
-        excluded=all_excluded,
-        meal_count=meal_count,
-        daily_energy=daily_energy,
-        goal=goal,
-        seed=None,
-    )
+# =========================================================
+# 사용자 입력
+# =========================================================
+st.markdown("### 📝 기본 정보 입력")
 
-    if new_plan is None:
-        st.error(
-            f"{failed_meal} 메뉴 후보가 없어요. "
-            "선호하는 식사 유형이나 제외 음식 설정을 조정해 주세요."
+with st.form("bmr_form"):
+    col1, col2 = st.columns(2)
+
+    with col1:
+        age = st.number_input(
+            "나이 (세)",
+            min_value=0,
+            max_value=120,
+            value=int(st.session_state.get("input_age", 25)),
+            step=1,
+            help="기초대사량과 EER은 연령대에 맞는 추정식을 사용해요.",
         )
-    else:
-        st.session_state["monthly_plan"] = new_plan
-        st.session_state["monthly_plan_settings"] = {
-            "style": meal_style,
-            "preference": all_preferences,
-            "excluded": all_excluded,
-            "meal_count": meal_count,
-            "goal": goal,
-            "energy": daily_energy,
-        }
-        st.session_state["selected_day"] = 1
-        st.success("30일 식단이 생성되었어요!")
 
+        previous_sex = st.session_state.get("input_sex", "여성")
+        sex = st.selectbox(
+            "계산 공식의 성별 구분",
+            ["여성", "남성"],
+            index=0 if previous_sex == "여성" else 1,
+            help="선택한 참고 공식에서 사용하는 성별 구분이에요.",
+        )
 
-# ==================================================
-# 생성된 식단 출력
-# ==================================================
-if "monthly_plan" in st.session_state:
-    st.divider()
-    st.markdown("### 🗓️ 나의 30일 식단표")
+    with col2:
+        height_cm = st.number_input(
+            "키 (cm)",
+            min_value=30.0,
+            max_value=250.0,
+            value=float(st.session_state.get("input_height", 165.0)),
+            step=0.5,
+        )
+        weight_kg = st.number_input(
+            "체중 (kg)",
+            min_value=2.0,
+            max_value=350.0,
+            value=float(st.session_state.get("input_weight", 60.0)),
+            step=0.5,
+        )
 
-    plan = st.session_state["monthly_plan"]
+    st.markdown("#### 🚶 활동 수준")
 
-    st.success("30일 식단이 준비되었어요!")
+    default_pal = st.session_state.get(
+        "input_pal",
+        "저활동적 (Low active)",
+    )
+    if default_pal not in PAL_OPTIONS:
+        default_pal = "저활동적 (Low active)"
 
-    saved_settings = st.session_state.get("monthly_plan_settings", {})
-
-    st.caption(
-        f"식사 유형: {saved_settings.get('style', '-')}"
-        f" · 목표: {saved_settings.get('goal', '-')}"
-        f" · 하루 에너지 참고값: "
-        f"{saved_settings.get('energy', 0):,.0f} kcal"
+    pal_category = st.selectbox(
+        "평소 하루 전체 활동 수준",
+        PAL_OPTIONS,
+        index=PAL_OPTIONS.index(default_pal),
+        help=(
+            "운동 횟수만이 아니라 걷기, 이동, 서 있는 시간 등 "
+            "하루 전체 활동을 고려해 선택해요. "
+            "선택한 수준은 EER 공식에 직접 반영돼요."
+        ),
     )
 
-    selected_day = st.selectbox(
-        "확인할 날짜를 선택하세요.",
-        options=list(range(1, 31)),
-        format_func=lambda x: f"{x}일 차",
-        key="selected_day",
-    )
+    st.markdown("#### 🗓️ 개인별 활동 기록 (참고용)")
 
-    selected_meal = plan[selected_day - 1]
+    activity_col1, activity_col2, activity_col3 = st.columns(3)
 
-    st.markdown(f"#### 🍽️ {selected_day}일 차 식단")
-
-    meal_names = [
-        key for key in selected_meal
-        if key != "일차"
+    walking_options = ["30분 미만", "30~60분", "60분 초과"]
+    frequency_options = ["0~1회", "2회", "3~4회", "5회 이상"]
+    intensity_options = [
+        "가벼운 강도",
+        "중간 강도",
+        "높은 강도",
+        "운동하지 않음",
     ]
 
-    columns = st.columns(len(meal_names))
+    with activity_col1:
+        previous_walking = st.session_state.get(
+            "input_walking_time", "30~60분"
+        )
+        walking_time = st.selectbox(
+            "하루 걷기·이동 시간",
+            walking_options,
+            index=(
+                walking_options.index(previous_walking)
+                if previous_walking in walking_options else 1
+            ),
+        )
 
-    for index, meal_name in enumerate(meal_names):
-        with columns[index]:
-            food_name = selected_meal[meal_name]
-            food_kcal = foods[food_name]["kcal"]
+    with activity_col2:
+        previous_frequency = st.session_state.get(
+            "input_exercise_frequency", "3~4회"
+        )
+        exercise_frequency = st.selectbox(
+            "주당 운동 횟수",
+            frequency_options,
+            index=(
+                frequency_options.index(previous_frequency)
+                if previous_frequency in frequency_options else 2
+            ),
+        )
 
-            st.markdown(
-                f"""
-                <div class="meal-card">
-                    <b>{meal_name}</b><br>
-                    {food_name}<br>
-                    <small>{food_kcal:,} kcal</small>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    with activity_col3:
+        previous_intensity = st.session_state.get(
+            "input_exercise_intensity", "중간 강도"
+        )
+        exercise_intensity = st.selectbox(
+            "주된 운동 강도",
+            intensity_options,
+            index=(
+                intensity_options.index(previous_intensity)
+                if previous_intensity in intensity_options else 1
+            ),
+        )
 
-    # --------------------------------------------------
-    # 하루 영양 분석
-    # --------------------------------------------------
-    st.divider()
-    st.markdown("### 📊 하루 영양 분석")
-
-    totals, meal_nutrition, macro_energy, macro_percent = (
-        calculate_daily_nutrition(selected_meal)
+    movement_options = [
+        "주로 앉아서 생활함",
+        "앉아 있는 시간과 걷기·이동이 섞여 있음",
+        "하루 중 걷거나 서 있는 시간이 많은 편",
+    ]
+    previous_movement = st.session_state.get(
+        "input_daily_movement",
+        "앉아 있는 시간과 걷기·이동이 섞여 있음",
     )
+    daily_movement = st.selectbox(
+        "운동 외 일상 활동",
+        movement_options,
+        index=(
+            movement_options.index(previous_movement)
+            if previous_movement in movement_options else 1
+        ),
+        help=(
+            "활동 기록을 해석할 때 참고해요. "
+            "이 항목들이 자동으로 열량을 더하거나 "
+            "활동 수준을 확정하지는 않아요."
+        ),
+    )
+
+    submitted = st.form_submit_button(
+        "기초대사량과 하루 에너지 필요량 계산하기",
+        use_container_width=True,
+    )
+
+
+# =========================================================
+# 계산 실행
+# =========================================================
+if submitted:
+    st.session_state["input_age"] = int(age)
+    st.session_state["input_sex"] = sex
+    st.session_state["input_height"] = float(height_cm)
+    st.session_state["input_weight"] = float(weight_kg)
+    st.session_state["input_pal"] = pal_category
+    st.session_state["input_walking_time"] = walking_time
+    st.session_state["input_exercise_frequency"] = exercise_frequency
+    st.session_state["input_exercise_intensity"] = exercise_intensity
+    st.session_state["input_daily_movement"] = daily_movement
+
+    bmr, bmr_formula_name = estimate_bmr(
+        int(age), sex, float(height_cm), float(weight_kg)
+    )
+    eer, eer_formula_name = estimate_eer(
+        int(age), sex, float(height_cm), float(weight_kg), pal_category
+    )
+
+    st.session_state["bmr_result"] = bmr
+    st.session_state["formula_name"] = bmr_formula_name
+    st.session_state["eer_formula_name"] = eer_formula_name
+    st.session_state["calculation_age_group"] = age_group_label(int(age))
+
+    if bmr is not None and eer is not None:
+        bmi = float(weight_kg) / ((float(height_cm) / 100) ** 2)
+
+        st.session_state["calculated_bmi"] = round(bmi, 1)
+        st.session_state["calculated_bmr"] = round(bmr)
+        st.session_state["calculated_eer"] = round(eer)
+        st.session_state["calculated_tdee"] = round(eer)
+        st.session_state["tdee"] = round(eer)
+        st.session_state["daily_calories"] = round(eer)
+        st.session_state["meal_plan_calories"] = round(eer)
+
+        st.session_state["calculated_age"] = int(age)
+        st.session_state["calculated_height"] = float(height_cm)
+        st.session_state["calculated_weight"] = float(weight_kg)
+        st.session_state["calculated_gender"] = sex
+        st.session_state["calculated_activity"] = pal_category
+        st.session_state["calculated_walking_time"] = walking_time
+        st.session_state["calculated_exercise_frequency"] = exercise_frequency
+        st.session_state["calculated_exercise_intensity"] = exercise_intensity
+        st.session_state["calculated_daily_movement"] = daily_movement
+    else:
+        for key in [
+            "calculated_bmr",
+            "calculated_eer",
+            "calculated_tdee",
+            "tdee",
+            "daily_calories",
+            "meal_plan_calories",
+            "calculated_bmi",
+        ]:
+            st.session_state.pop(key, None)
+
+
+# =========================================================
+# 결과 표시
+# =========================================================
+bmr_result = st.session_state.get("bmr_result", "not_calculated")
+
+if bmr_result is not None and bmr_result != "not_calculated":
+    bmr_value = float(bmr_result)
+    eer_value = float(st.session_state.get("calculated_eer", 0))
+
+    age_now = int(st.session_state.get("calculated_age", 25))
+    current_pal = st.session_state.get(
+        "calculated_activity", "저활동적 (Low active)"
+    )
+
+    st.divider()
+    st.markdown("### 📊 계산 결과")
 
     metric1, metric2, metric3 = st.columns(3)
-
-    with metric1:
-        st.metric("하루 에너지", f"{totals['kcal']:,} kcal")
-
-    with metric2:
-        st.metric("탄수화물", f"{totals['carbs']:.1f} g")
-
-    with metric3:
-        st.metric("단백질", f"{totals['protein']:.1f} g")
-
-    st.caption(
-        "에너지와 영양소는 현재 코드에 저장된 메뉴별 기준값을 합산한 참고 정보예요. "
-        "실제 섭취량이나 조리법에 따라 달라질 수 있어요."
+    metric1.metric("추정 기초대사량", f"{bmr_value:,.0f} kcal/일")
+    metric2.metric("예상 하루 에너지 필요량", f"{eer_value:,.0f} kcal/일")
+    metric3.metric(
+        "적용 연령대",
+        st.session_state.get("calculation_age_group", "-"),
     )
 
-    # 탄단지 에너지 구성 그래프
-    st.markdown("#### 🍚 탄수화물·단백질·지방의 에너지 구성")
+    st.markdown(
+        f'<div class="info-card">'
+        f'<strong>하루 에너지 필요량 계산 기준</strong><br>'
+        f"{st.session_state.get('eer_formula_name', '연령별 EER 추정식')}<br>"
+        f"활동 수준: {current_pal}"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
 
-    macro_df = pd.DataFrame({
-        "영양소": list(macro_energy.keys()),
-        "에너지(kcal)": list(macro_energy.values()),
-        "비율(%)": [
-            macro_percent[name]
-            for name in macro_energy
-        ],
-    })
-
-    if macro_df["에너지(kcal)"].sum() > 0:
-        fig_macro = px.pie(
-            macro_df,
-            names="영양소",
-            values="에너지(kcal)",
-            hole=0.55,
-            title="탄단지에서 얻는 에너지 비율",
+    if age_now < 3:
+        st.warning(
+            "현재 앱은 3세 미만을 위한 개월 단위 입력과 "
+            "별도 영유아 계산 화면을 제공하지 않아 "
+            "이 연령대의 하루 에너지 필요량을 계산하지 않아요."
         )
-
-        fig_macro.update_traces(
-            textposition="inside",
-            texttemplate="%{label}<br>%{percent}",
-        )
-
-        fig_macro.update_layout(
-            paper_bgcolor="#FBF9F1",
-            plot_bgcolor="#FBF9F1",
-            font=dict(family="Gowun Dodum"),
-            legend_title_text="영양소",
-        )
-
-        st.plotly_chart(fig_macro, use_container_width=True)
-
-        st.caption(
-            "이 그래프는 전체 영양소의 비율이 아니라, "
-            "탄수화물·단백질·지방에서 얻는 에너지끼리 비교한 비율이에요. "
-            "탄수화물과 단백질은 1g당 약 4kcal, 지방은 1g당 약 9kcal로 계산했어요."
+    elif age_now < 19:
+        st.warning(
+            "어린이·청소년용 EER 공식에는 성장에 필요한 "
+            "에너지 항이 포함되어 있어요. 개인의 실제 필요량과 "
+            "차이가 날 수 있으므로, 이 값으로 섭취량을 "
+            "엄격하게 제한하지 마세요."
         )
     else:
-        st.info("탄단지 에너지 데이터를 계산할 수 없어요.")
-
-    # --------------------------------------------------
-    # 무기질 그래프
-    # --------------------------------------------------
-    st.markdown("#### 🧂 무기질 섭취량")
-
-    mineral_values = {
-        "칼슘": totals["calcium"],
-        "철분": totals["iron"],
-        "칼륨": totals["potassium"],
-        "나트륨": totals["sodium"],
-    }
-
-    mineral_df = pd.DataFrame({
-        "영양소": list(mineral_values.keys()),
-        "섭취량(mg)": list(mineral_values.values()),
-    })
-
-    fig_mineral = px.bar(
-        mineral_df,
-        x="영양소",
-        y="섭취량(mg)",
-        text="섭취량(mg)",
-        title="하루 무기질 합계",
-    )
-
-    fig_mineral.update_layout(
-        paper_bgcolor="#FBF9F1",
-        plot_bgcolor="#FBF9F1",
-        font=dict(family="Gowun Dodum"),
-        showlegend=False,
-        yaxis_title="섭취량 (mg)",
-        xaxis_title="",
-    )
-
-    st.plotly_chart(fig_mineral, use_container_width=True)
-
-    # --------------------------------------------------
-    # 비타민 및 식이섬유
-    # --------------------------------------------------
-    st.markdown("#### 🍊 비타민 및 식이섬유")
-
-    vitamin_col1, vitamin_col2, vitamin_col3 = st.columns(3)
-
-    with vitamin_col1:
-        st.metric("비타민 A", f"{totals['vitamin_a']:.1f} μg")
-
-    with vitamin_col2:
-        st.metric("비타민 C", f"{totals['vitamin_c']:.1f} mg")
-
-    with vitamin_col3:
-        st.metric("비타민 D", f"{totals['vitamin_d']:.1f} μg")
-
-    st.metric("식이섬유", f"{totals['fiber']:.1f} g")
-
-    # --------------------------------------------------
-    # 끼니별 에너지
-    # --------------------------------------------------
-    st.markdown("#### 🍽️ 끼니별 에너지 구성")
-
-    meal_energy_df = pd.DataFrame([
-        {
-            "끼니": meal_name,
-            "에너지(kcal)": foods[food_name]["kcal"],
-        }
-        for meal_name, food_name in selected_meal.items()
-        if meal_name != "일차"
-    ])
-
-    fig_meal = px.bar(
-        meal_energy_df,
-        x="끼니",
-        y="에너지(kcal)",
-        text="에너지(kcal)",
-        title="끼니별 에너지",
-    )
-
-    fig_meal.update_layout(
-        paper_bgcolor="#FBF9F1",
-        plot_bgcolor="#FBF9F1",
-        font=dict(family="Gowun Dodum"),
-        showlegend=False,
-        xaxis_title="",
-        yaxis_title="에너지 (kcal)",
-    )
-
-    st.plotly_chart(fig_meal, use_container_width=True)
-
-    # --------------------------------------------------
-    # 영양소 상세표
-    # --------------------------------------------------
-    with st.expander("영양소별 합계 자세히 보기"):
-        detail_df = pd.DataFrame([
-            ["에너지", f"{totals['kcal']:.1f}", "kcal"],
-            ["탄수화물", f"{totals['carbs']:.1f}", "g"],
-            ["단백질", f"{totals['protein']:.1f}", "g"],
-            ["지방", f"{totals['fat']:.1f}", "g"],
-            ["식이섬유", f"{totals['fiber']:.1f}", "g"],
-            ["칼슘", f"{totals['calcium']:.1f}", "mg"],
-            ["철분", f"{totals['iron']:.1f}", "mg"],
-            ["칼륨", f"{totals['potassium']:.1f}", "mg"],
-            ["나트륨", f"{totals['sodium']:.1f}", "mg"],
-            ["비타민 A", f"{totals['vitamin_a']:.1f}", "μg"],
-            ["비타민 C", f"{totals['vitamin_c']:.1f}", "mg"],
-            ["비타민 D", f"{totals['vitamin_d']:.1f}", "μg"],
-        ], columns=["영양소", "합계", "단위"])
-
-        st.dataframe(
-            detail_df,
-            use_container_width=True,
-            hide_index=True,
+        st.caption(
+            "EER은 연령·성별·키·체중·활동 수준을 바탕으로 한 "
+            "추정값이며, 개인의 실제 에너지 소비량을 "
+            "직접 측정한 값은 아니에요."
         )
 
-    # --------------------------------------------------
-    # 전체 30일 식단표
-    # --------------------------------------------------
-    st.divider()
-    st.markdown("#### 📋 전체 30일 식단표")
-
-    plan_df = pd.DataFrame(plan)
-
-    st.dataframe(
-        plan_df,
-        use_container_width=True,
-        hide_index=True,
+    st.markdown("#### 🚶 활동 기록 확인")
+    st.write(
+        "- 하루 걷기·이동 시간: **"
+        f"{st.session_state.get('calculated_walking_time', '-') }**"
+    )
+    st.write(
+        "- 주당 운동 횟수: **"
+        f"{st.session_state.get('calculated_exercise_frequency', '-') }**"
+    )
+    st.write(
+        "- 주된 운동 강도: **"
+        f"{st.session_state.get('calculated_exercise_intensity', '-') }**"
+    )
+    st.write(
+        "- 운동 외 일상 활동: **"
+        f"{st.session_state.get('calculated_daily_movement', '-') }**"
     )
 
-    st.download_button(
-        "📥 30일 식단표 다운로드",
-        data=plan_df.to_csv(index=False).encode("utf-8-sig"),
-        file_name="NutriDay_30day_meal_plan.csv",
-        mime="text/csv",
-        use_container_width=True,
+    st.info(
+        "활동 기록은 선택한 활동 수준이 생활 패턴과 대체로 맞는지 "
+        "확인하기 위한 참고 자료예요. 이 기록만으로 EER 활동 수준을 "
+        "자동 확정하지 않으며, EER에 반영된 활동을 다시 열량으로 "
+        "더하지 않아요."
+    )
+
+    st.markdown("#### 🥗 계산 결과 활용")
+    st.write(
+        f"예상 하루 에너지 필요량 **{eer_value:,.0f} kcal/일**을 "
+        "기존 한 달 맞춤 식단 페이지로 전달해요. "
+        "식단은 참고 추정값뿐 아니라 식품 다양성과 영양 균형을 "
+        "함께 고려해 주세요."
     )
 
     st.button(
-        "🍽️ 식사 기록 & 영양 관리로 이동하기 →",
-        key="go_to_record",
+        "🥗 식단 플래너로 이동하기 →",
+        key="go_to_meal_planner",
         use_container_width=True,
-        on_click=lambda: st.switch_page("pages/record.py"),
+        on_click=lambda: st.switch_page("pages/calculate.py"),
     )
 
-else:
-    st.info("식단 생성 버튼을 눌러 나만의 식단을 만들어 보세요!")
+elif bmr_result is None:
+    st.warning(
+        "3세 미만은 개월 단위 나이와 별도 영유아 입력이 필요해 "
+        "현재 화면에서 계산하지 않아요. 영유아의 에너지 필요량과 "
+        "식단은 소아·영양 전문가의 안내를 참고해 주세요."
+    )
+
+# =========================================================
+# 공식 및 계산 한계 안내
+# =========================================================
+with st.expander("공식과 계산 결과에 대한 안내"):
+    st.markdown(
+        """
+        - 공식은 집단 자료를 바탕으로 한 추정식이므로 개인의 실제 에너지 소비량과 차이가 날 수 있어요.
+        - 임신·수유 중이거나 특정 질환이 있는 경우, 또는 개인별 식단 처방이 필요한 경우에는 전문가의 안내를 참고해 주세요.
+        """
+    )
+
+st.caption(
+    "NutriDay는 교육용 참고 도구이며 의료 진단이나 "
+    "개인별 영양 처방을 대신하지 않아요."
+)
