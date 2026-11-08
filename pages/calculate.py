@@ -548,7 +548,7 @@ def classify_meal_role(name, info):
     일반 식사는 주식·단백질 반찬·채소 반찬·국물로 구성하고,
     간식은 과일·견과류·간단한 유제품으로 제한한다.
     """
-        name = str(name).casefold()
+    name = str(name).casefold()
     group = info.get("group", "")
 
     # 간식: 유제품 전체가 아니라 간식으로 먹기 쉬운 품목만 분류
